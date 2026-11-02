@@ -92,24 +92,24 @@ const MENU = {
 function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 // Kapsul Rich lebarnya mengikuti teks — samakan panjang label sepasang dengan
 // spasi non-breaking di kiri/kanan agar tombol tampil simetris (pilihan user).
+const W_UP = { A: .98, B: 1.0, C: 1.08, D: 1.08, E: .89, F: .82, G: 1.08, H: 1.06, I: .39, J: .71, K: .95, L: .82, M: 1.26, N: 1.06, O: 1.09, P: .95, Q: 1.09, R: .95, S: .89, T: .89, U: 1.06, V: .98, W: 1.39, X: .95, Y: .95, Z: .89 };
+const W_LO = { a: .82, b: .89, c: .74, d: .89, e: .82, f: .43, g: .89, h: .89, i: .35, j: .35, k: .79, l: .35, m: 1.32, n: .89, o: .89, p: .89, q: .89, r: .51, s: .74, t: .51, u: .89, v: .79, w: 1.14, x: .79, y: .79, z: .74 };
 function charW(ch) {
-  if (ch === '\u00A0' || ch === ' ') return 0.5;
-  if ('MW@#%'.includes(ch)) return 1.35;
-  if ('Iil1|!'.includes(ch)) return 0.45;
-  if (ch >= 'A' && ch <= 'Z') return 1.0;
-  if (ch >= 'a' && ch <= 'z') return 0.82;
-  if (ch >= '0' && ch <= '9') return 0.9;
+  if (ch === ' ' || ch === '\u00A0') return 0.37;
+  if (W_UP[ch]) return W_UP[ch];
+  if (W_LO[ch]) return W_LO[ch];
+  if (ch >= '0' && ch <= '9') return 0.89;
   const cp = ch.codePointAt(0);
-  if (cp > 0xFFFF || cp > 0x2000) return 1.6;
-  return 0.8;
+  if (cp > 0x2000) return 1.7;
+  return 0.85;
 }
 function textW(t) { let w = 0; for (const ch of String(t)) w += charW(ch); return w; }
 function padLabel(text, target) {
   const t = String(text);
   const w = textW(t);
   if (w >= target) return t;
-  const n = Math.ceil((target - w) / 0.5);
-  const left = 0;
+  const n = Math.ceil((target - w) / 0.37);
+  const left = Math.round(n * 0.41);
   return '\u00A0'.repeat(left) + t + '\u00A0'.repeat(n - left);
 }
 function targetName() { return (!db.targetDevice || db.targetDevice === '*') ? 'Semua HP' : ((db.devices[db.targetDevice] || {}).name || 'Semua HP'); }
