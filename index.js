@@ -109,7 +109,7 @@ function padLabel(text, target) {
   const w = textW(t);
   if (w >= target) return t;
   const n = Math.ceil((target - w) / 0.37);
-  const left = Math.round(n * 0.41);
+  const left = Math.round(n * 0.30);
   return '\u00A0'.repeat(left) + t + '\u00A0'.repeat(n - left);
 }
 function targetName() { return (!db.targetDevice || db.targetDevice === '*') ? 'Semua HP' : ((db.devices[db.targetDevice] || {}).name || 'Semua HP'); }
