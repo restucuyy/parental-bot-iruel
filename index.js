@@ -32,6 +32,7 @@ const DB_PATH = path.join(__dirname, 'database.json');
 let db = {
   targetDevice: '*',
   featureTargets: {}, // fitur -> deviceId | '*' (pilihan device terakhir per fitur)
+  perDevice: {},      // deviceId -> {dailyLimitMinutes?, pauseUntil?} aturan khusus per HP
   devices: {},        // deviceId -> {name, model, android, lastSeen, battery, foregroundApp}
   usage: {},          // deviceId -> {date, totalMinutes, apps:[{package,label,minutes}], receivedAt}
   policy: {           // satu kebijakan untuk semua HP anak (v1)
@@ -233,34 +234,47 @@ function delDeviceRichHtml() {
 }
 function timerRichHtml() {
   const p = db.policy;
+  let rows = '<tr><td>Timer Umum</td><td>' + (p.dailyLimitMinutes ? fmtMin(p.dailyLimitMinutes) + ' / hari' : 'Tanpa batas') + '</td></tr>';
+  for (const id of Object.keys(db.perDevice || {})) {
+    const pd = db.perDevice[id];
+    if (pd && Object.prototype.hasOwnProperty.call(pd, 'dailyLimitMinutes')) rows += '<tr><td>Timer ' + esc((db.devices[id] || {}).name || id) + '</td><td>' + (pd.dailyLimitMinutes ? fmtMin(pd.dailyLimitMinutes) + ' / hari' : 'Mati') + '</td></tr>';
+  }
   return ''
     + '<h3>TIMER PERANGKAT</h3>'
-    + '<blockquote>Atur batas total waktu main anak per hari. Lewat dari batas ini, perangkat terkunci otomatis sampai besok. Pilih cepat di bawah, atau ketik /batas &lt;menit&gt; untuk angka bebas.</blockquote>'
-    + '<table bordered striped>'
-    + '<tr><th>INFO</th><th>KETERANGAN</th></tr>'
-    + '<tr><td>Timer Saat Ini</td><td>' + (p.dailyLimitMinutes ? fmtMin(p.dailyLimitMinutes) + ' / hari' : 'Tanpa batas') + '</td></tr>'
-    + '<tr><td>Timer Per Aplikasi</td><td>' + (Object.keys(p.perAppLimits || {}).length ? Object.keys(p.perAppLimits).length + ' aplikasi dibatasi' : 'Belum ada') + '</td></tr>'
-    + '</table>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="timer_30">' + padLabel('30 Menit', 8) + '</tg-button><tg-button type="callback_data" style="primary" data="timer_60">' + padLabel('60 Menit', 8) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="timer_90">' + padLabel('90 Menit', 9) + '</tg-button><tg-button type="callback_data" style="primary" data="timer_120">' + padLabel('120 Menit', 9) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="timer_0">' + padLabel('Tanpa Batas', 11) + '</tg-button><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 11) + '</tg-button></tg-button-row>';
+    + '<blockquote>Pilih lama timernya dulu, sesudah itu baru pilih HP-nya. Lewat dari batas ini, perangkat terkunci otomatis sampai besok.</blockquote>'
+    + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr>' + rows + '</table>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="tset_5">' + padLabel('5 MENIT', 13) + '</tg-button><tg-button type="callback_data" style="primary" data="tset_10">' + padLabel('10 MENIT', 13) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="tset_20">' + padLabel('20 MENIT', 13) + '</tg-button><tg-button type="callback_data" style="primary" data="tset_30">' + padLabel('30 MENIT', 13) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="tset_0">' + padLabel('MATIKAN TIMER', 28) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
+}
+function pickAfterHtml(kind, n) {
+  const isTimer = kind === 'timer';
+  const title = isTimer ? (n === 0 ? 'MATIKAN TIMER' : 'TIMER ' + n + ' MENIT') : (n === 0 ? 'AKHIRI JEDA' : 'JEDA ' + n + ' MENIT');
+  const prefix = (isTimer ? 'tgo_' : 'jgo_') + n + '_';
+  let btns = '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="' + prefix + 'all">' + padLabel('Semua HP', 28) + '</tg-button></tg-button-row>';
+  for (const id of Object.keys(db.devices)) {
+    btns += '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="' + prefix + id + '">' + padLabel(esc(db.devices[id].name), 28) + '</tg-button></tg-button-row>';
+  }
+  btns += '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="' + (isTimer ? 'timer' : 'jeda') + '">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
+  return '<h3>' + title + ' \u2014 PILIH DEVICE</h3>'
+    + '<blockquote>Pilih HP yang mau dipasangi ' + (isTimer ? 'timer' : 'jeda') + ' ini, atau semua HP sekaligus.</blockquote>'
+    + '<table bordered striped><tr><th>PERANGKAT</th><th>KETERANGAN</th></tr>' + deviceRowsHtml() + '</table>'
+    + btns;
 }
 function jedaRichHtml() {
   const p = db.policy;
   const sisa = p.pauseUntil && p.pauseUntil > now() ? Math.ceil((p.pauseUntil - now()) / 60000) : 0;
   return ''
     + '<h3>JEDA PERANGKAT</h3>'
-    + '<blockquote>Selama jeda, semua aplikasi di HP anak tertutup. Jeda berakhir sendiri saat waktunya habis, atau akhiri lebih awal dari sini.</blockquote>'
-    + '<table bordered striped>'
-    + '<tr><th>INFO</th><th>KETERANGAN</th></tr>'
-    + '<tr><td>Status Jeda</td><td>' + (sisa ? 'Sedang dijeda' : 'Tidak dijeda') + '</td></tr>'
-    + '<tr><td>Sisa Jeda</td><td>' + (sisa ? '±' + sisa + ' menit (s/d ' + new Date(p.pauseUntil).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ')' : '-') + '</td></tr>'
-    + '</table>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="jeda_15">' + padLabel('Jeda 15 Menit', 13) + '</tg-button><tg-button type="callback_data" style="success" data="jeda_30">' + padLabel('Jeda 30 Menit', 13) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="jeda_60">' + padLabel('Jeda 60 Menit', 13) + '</tg-button><tg-button type="callback_data" style="danger" data="jeda_off">' + padLabel('Akhiri Jeda', 13) + '</tg-button></tg-button-row>'
+    + '<blockquote>Pilih lama jedanya dulu, sesudah itu baru pilih HP-nya. Selama jeda, semua aplikasi di HP anak tertutup.</blockquote>'
+    + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr>'
+    + '<tr><td>Jeda Umum</td><td>' + (sisa ? 'Sedang dijeda \u00b1' + sisa + ' menit lagi' : 'Tidak dijeda') + '</td></tr></table>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="jset_15">' + padLabel('15 MENIT', 13) + '</tg-button><tg-button type="callback_data" style="success" data="jset_30">' + padLabel('30 MENIT', 13) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="jset_60">' + padLabel('60 MENIT', 13) + '</tg-button><tg-button type="callback_data" style="success" data="jset_120">' + padLabel('120 MENIT', 13) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="jset_0">' + padLabel('AKHIRI JEDA', 28) + '</tg-button></tg-button-row>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
 }
-
 function toRichHtml(text) {
   const lines = String(text || '').split('\n');
   let html = ''; let rows = []; let quote = [];
@@ -501,6 +515,44 @@ async function handleCommand(msg) {
       }
       return send('Fitur tidak dikenal.');
     }
+    case '/tset': {
+      const n = parseInt(arg, 10);
+      if (isNaN(n) || n < 0) return send('Pilih menit dari tombol TIMER.');
+      if (!Object.keys(db.devices).length) return send('Belum ada HP anak yang tertaut. Tambah dulu lewat tombol DEVICE.');
+      return sendRich(chatId, pickAfterHtml('timer', n), 'Pilih device untuk timer.');
+    }
+    case '/tgo': {
+      const n = parseInt(rest[0], 10); const target = rest[1] || 'all';
+      if (isNaN(n)) return send('Format timer salah.');
+      if (target !== 'all' && !db.devices[target]) return send('HP tujuan tidak ditemukan.');
+      if (target === 'all') db.policy.dailyLimitMinutes = n;
+      else { db.perDevice = db.perDevice || {}; db.perDevice[target] = db.perDevice[target] || {}; db.perDevice[target].dailyLimitMinutes = n; }
+      saveDb();
+      return send('\u25f7 *TIMER diatur*\nTimer: ' + (n === 0 ? 'Mati (tanpa batas)' : fmtMin(n) + ' / hari') + '\nTarget: ' + (target === 'all' ? 'Semua HP' : db.devices[target].name));
+    }
+    case '/jset': {
+      const n = parseInt(arg, 10);
+      if (isNaN(n) || n < 0) return send('Pilih menit dari tombol JEDA.');
+      if (!Object.keys(db.devices).length) return send('Belum ada HP anak yang tertaut. Tambah dulu lewat tombol DEVICE.');
+      return sendRich(chatId, pickAfterHtml('jeda', n), 'Pilih device untuk jeda.');
+    }
+    case '/jgo': {
+      const n = parseInt(rest[0], 10); const target = rest[1] || 'all';
+      if (isNaN(n)) return send('Format jeda salah.');
+      if (target !== 'all' && !db.devices[target]) return send('HP tujuan tidak ditemukan.');
+      db.perDevice = db.perDevice || {};
+      if (n > 0) {
+        const until = now() + n * 60000;
+        if (target === 'all') { db.policy.pauseUntil = until; queueCommand('pause', null, '*'); }
+        else { db.perDevice[target] = db.perDevice[target] || {}; db.perDevice[target].pauseUntil = until; queueCommand('pause', null, target); }
+        saveDb();
+        return send('\u23f8 *JEDA diatur*\nJeda: ' + n + ' menit (s/d ' + new Date(until).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ')\nTarget: ' + (target === 'all' ? 'Semua HP' : db.devices[target].name));
+      }
+      if (target === 'all') { db.policy.pauseUntil = 0; for (const id of Object.keys(db.perDevice)) { if (db.perDevice[id]) delete db.perDevice[id].pauseUntil; } }
+      else { db.perDevice[target] = db.perDevice[target] || {}; db.perDevice[target].pauseUntil = 0; }
+      saveDb();
+      return send('\u25b6 *Jeda diakhiri*\nTarget: ' + (target === 'all' ? 'Semua HP' : db.devices[target].name));
+    }
     case '/laporan': return send(laporanText());
     case '/status': return send(statusText());
     case '/kunci':
@@ -593,6 +645,10 @@ async function handleCallback(cb) {
   if (cb.data && cb.data.indexOf('fstart_') === 0) { fake.text = '/fstart ' + cb.data.slice(7); return handleCommand(fake); }
   if (cb.data && cb.data.indexOf('pbuka_') === 0) { fake.text = '/pbuka ' + cb.data.slice(6); return handleCommand(fake); }
   if (cb.data && cb.data.indexOf('pgo_') === 0) { fake.text = '/pgo ' + cb.data.slice(4); return handleCommand(fake); }
+  if (cb.data && cb.data.indexOf('tset_') === 0) { fake.text = '/tset ' + cb.data.slice(5); return handleCommand(fake); }
+  if (cb.data && cb.data.indexOf('jset_') === 0) { fake.text = '/jset ' + cb.data.slice(5); return handleCommand(fake); }
+  if (cb.data && cb.data.indexOf('tgo_') === 0) { const r = cb.data.slice(4); const li = r.lastIndexOf('_'); fake.text = '/tgo ' + r.slice(0, li) + ' ' + r.slice(li + 1); return handleCommand(fake); }
+  if (cb.data && cb.data.indexOf('jgo_') === 0) { const r = cb.data.slice(4); const li = r.lastIndexOf('_'); fake.text = '/jgo ' + r.slice(0, li) + ' ' + r.slice(li + 1); return handleCommand(fake); }
   if (cb.data && cb.data.indexOf('act_') === 0) { const li = cb.data.lastIndexOf('_'); fake.text = '/jalan ' + cb.data.slice(4, li) + ' ' + cb.data.slice(li + 1); return handleCommand(fake); }
   if (cb.data && cb.data.indexOf('del_') === 0) { fake.text = '/hapusdevice ' + cb.data.slice(4); return handleCommand(fake); }
   if (map[cb.data]) { fake.text = map[cb.data]; return handleCommand(fake); }
@@ -659,6 +715,12 @@ const server = http.createServer(async (req, res) => {
   }
   if (p === '/api/policy' && req.method === 'GET') {
     const pol = Object.assign({}, db.policy, { hasScareVideo: !!db.scareVideo, scareVideoSetAt: db.scareVideo ? db.scareVideo.setAt : 0 });
+    const didQ = url.searchParams.get('deviceId');
+    const pd = didQ && db.perDevice ? db.perDevice[didQ] : null;
+    if (pd) {
+      if (Object.prototype.hasOwnProperty.call(pd, 'dailyLimitMinutes')) pol.dailyLimitMinutes = pd.dailyLimitMinutes;
+      if (Object.prototype.hasOwnProperty.call(pd, 'pauseUntil')) pol.pauseUntil = pd.pauseUntil;
+    }
     return json(res, 200, { ok: true, policy: pol });
   }
   if (p === '/api/scare-video' && req.method === 'GET') {
