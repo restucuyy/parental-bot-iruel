@@ -147,10 +147,10 @@ function startRichHtml() {
     + '</table>'
     // Tata letak user (15:31): DEVICE+LAPORAN pasangan; TIMER sendiri;
     // JEDA sendiri; TAUT HP+STATUS HP pasangan; VIDEO POLISI sendiri.
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="device">' + padLabel('DEVICE', 21) + '</tg-button><tg-button type="callback_data" style="primary" data="laporan">' + padLabel('Laporan', 21) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="taut">' + padLabel('TAUT HP', 21) + '</tg-button><tg-button type="callback_data" style="primary" data="laporan">' + padLabel('Laporan', 21) + '</tg-button></tg-button-row>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="timer">' + padLabel('TIMER PERANGKAT', 44) + '</tg-button></tg-button-row>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="jeda">' + padLabel('JEDA PERANGKAT', 44) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="taut">' + padLabel('TAUT HP', 21) + '</tg-button><tg-button type="callback_data" style="success" data="status">' + padLabel('Status HP', 21) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="status">' + padLabel('Status HP', 44) + '</tg-button></tg-button-row>'
     + (polisiActive()
       ? '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="pmatikan">' + padLabel('MATIKAN VIDEO', 44) + '</tg-button></tg-button-row>'
       : '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="polisi">' + padLabel('\uD83D\uDEA8 VIDEO POLISI', 44) + '</tg-button></tg-button-row>');
@@ -217,14 +217,13 @@ function deviceRowsHtml() {
 }
 function tautRichHtml() {
   const ids = Object.keys(db.devices);
-  const d = ids.length ? db.devices[ids[0]] : null;
+  const rows = ids.length ? ids.map(id => { const d = db.devices[id]; return '<tr><td>' + esc(d.name) + '</td><td>' + (deviceOnline(d) ? 'Online' : 'Offline') + '</td></tr>'; }).join('') : '<tr><td>Perangkat</td><td>Belum ada HP yang tertaut</td></tr>';
   return '<p><b>TAUT HP</b></p>'
-    + '<blockquote>Cara menautkan: tekan GENERATE KODE \u2014 muncul kode acak sekali pakai. Ketik kode itu di aplikasi HP anak, HP langsung tertaut dan kodenya hangus (tidak bisa dipakai lagi). Buat kode baru untuk HP berikutnya.</blockquote>'
-    + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr>'
-    + '<tr><td>Status</td><td>' + (d ? (deviceOnline(d) ? 'Tertaut & online \u2014 ' + esc(d.name) : 'Tertaut, sedang offline \u2014 ' + esc(d.name)) : 'Belum ada HP yang tertaut') + '</td></tr>'
-    + '<tr><td>Kode sekali pakai</td><td>' + (activePairCode() ? '<b>' + activePairCode() + '</b> (berlaku 15 menit, hangus sesudah dipakai)' : 'belum dibuat \u2014 tekan GENERATE KODE') + '</td></tr>'
-    + '<tr><td>HP tertaut</td><td>' + ids.length + '</td></tr></table>'
+    + '<blockquote>Satu pintu untuk semua urusan HP anak: menautkan HP baru (tekan GENERATE KODE \u2014 kode acak sekali pakai, berlaku 5 menit, hangus sesudah dipakai atau kedaluwarsa), melepas HP, dan mematikan HP dari sini.</blockquote>'
+    + '<table bordered striped><tr><th>HP TERTAUT</th><th>STATUS</th></tr>' + rows
+    + '<tr><td>Kode sekali pakai</td><td>' + (activePairCode() ? '<b>' + activePairCode() + '</b> (berlaku 5 menit)' : 'belum dibuat \u2014 tekan GENERATE KODE') + '</td></tr></table>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="tautgen">' + padLabel('GENERATE KODE', 44) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="dev_del">' + padLabel('LEPAS HP', 21) + '</tg-button><tg-button type="callback_data" style="danger" data="matikan">' + padLabel('MATIKAN HP', 21) + '</tg-button></tg-button-row>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
 }
 function listDeviceRichHtml() {
@@ -547,7 +546,9 @@ async function handleCommand(msg) {
     }
     case '/tautgen': {
       const kode = newPairCode();
-      return sendRich(chatId, tautRichHtml(), 'Kode sekali pakai baru: ' + kode + ' \u2014 ketik di aplikasi HP anak (berlaku 15 menit, sekali pakai).');
+      if (db.pairCodes[kode]) { db.pairCodes[kode].chatId = chatId; saveDb(); }
+      setTimeout(() => { const rec = (db.pairCodes || {})[kode]; if (rec && !rec.msgId) { rec.msgId = (db.lastBotMsg || {})[chatId] || null; saveDb(); } }, 1500);
+      return sendRich(chatId, tautRichHtml(), 'Kode sekali pakai baru: ' + kode + ' \u2014 ketik di aplikasi HP anak (berlaku 5 menit, sekali pakai).');
     }
     case '/matikan':
       // Urutan wajib dari user: SEBELUM MATI, video polisi tampil dulu (±20 detik), baru layar mati.
@@ -569,7 +570,7 @@ async function handleCommand(msg) {
       db.policy.pauseUntil = 0; saveDb();
       return send('▶ Jeda diakhiri. Perangkat anak bisa dipakai lagi.');
     case '/device':
-      return sendRich(chatId, deviceRichHtml(), 'Menu DEVICE: + DEVICE, - DEVICE, LIST DEVICE.');
+      return sendRich(chatId, tautRichHtml(), 'Menu TAUT HP.');
     case '/tambahdevice':
       return sendRich(chatId, tautRichHtml(), 'Menu TAUT HP.');
     case '/listdevice':
@@ -833,7 +834,7 @@ async function handleCallback(cb) {
   if (!isParent(fromId)) return;
   const fake = { chat: { id: chatId }, from: cb.from, text: '' };
   const map = { menu: '/start', laporan: '/laporan', status: '/status', kunci: '/kunci', buka: '/buka', daftarblokir: '/daftarblokir', info_batas: '/batas', info_jadwal: '/jadwal', kode: '/kode', polisi: '/polisi', polisi_off: '/polisimati', taut: '/taut', tautgen: '/tautgen', lokasi: '/lokasi', bunyi: '/bunyi', bunyimati: '/bunyimati', matikan: '/matikan', timer: '/timer', jeda: '/jeda', timer_30: '/timer30', timer_60: '/timer60', timer_90: '/timer90', timer_120: '/timer120', timer_0: '/timer0', jeda_15: '/jeda15', jeda_30: '/jeda30', jeda_60: '/jeda60', jeda_off: '/jedabatal' };
-  if (cb.data === 'device') { fake.text = '/device'; return handleCommand(fake); }
+  if (cb.data === 'device') { fake.text = '/taut'; return handleCommand(fake); }
   if (cb.data === 'dev_add') { fake.text = '/taut'; return handleCommand(fake); }
   if (cb.data === 'dev_del') { fake.text = '/pilihhapus'; return handleCommand(fake); }
   if (cb.data === 'dev_list') { fake.text = '/listdevice'; return handleCommand(fake); }
@@ -920,7 +921,7 @@ function newPairCode() {
 }
 function activePairCode() {
   const pcs = db.pairCodes || {};
-  for (const c of Object.keys(pcs)) if (!pcs[c].usedBy && now() - pcs[c].createdAt < 15 * 60000) return c;
+  for (const c of Object.keys(pcs)) if (!pcs[c].usedBy && now() - pcs[c].createdAt < 5 * 60000) return c;
   return null;
 }
 
@@ -936,7 +937,7 @@ const server = http.createServer(async (req, res) => {
     const code = req.headers['x-child-code'] || '';
     if (code !== CHILD_CODE) {
       const pc = (db.pairCodes || {})[code];
-      if (!pc || pc.usedBy || now() - pc.createdAt > 15 * 60000) return json(res, 401, { ok: false, error: 'kode sekali pakai tidak berlaku (sudah dipakai / kedaluwarsa) \u2014 generate kode baru di menu TAUT HP bot' });
+      if (!pc || pc.usedBy || now() - pc.createdAt > 5 * 60000) return json(res, 401, { ok: false, error: 'kode sekali pakai tidak berlaku (sudah dipakai / kedaluwarsa) \u2014 generate kode baru di menu TAUT HP bot' });
       pc.usedBy = id; pc.usedAt = now();
     }
     db.devices[id] = Object.assign({}, db.devices[id], { name: b.deviceName || 'HP Anak', model: b.model || '', android: b.androidVersion || '', lastSeen: now() });
@@ -1041,5 +1042,25 @@ const server = http.createServer(async (req, res) => {
   return json(res, 404, { ok: false, error: 'not found' });
 });
 
+// Pengawas kode pairing: kode hangus > 5 menit -> pesan kode dihapus, diganti tombol BUAT KODE BARU
+setInterval(() => {
+  try {
+    const pcs = db.pairCodes || {};
+    for (const code of Object.keys(pcs)) {
+      const rec = pcs[code];
+      if (!rec || rec.usedBy || rec.notified) continue;
+      if (now() - rec.createdAt <= 5 * 60000) continue;
+      rec.notified = true;
+      const chatId = rec.chatId, msgId = rec.msgId;
+      delete pcs[code]; saveDb();
+      if (!chatId) continue;
+      if (msgId) tg('deleteMessage', { chat_id: chatId, message_id: msgId }).catch(() => {});
+      const html = '<p><b>TAUT HP</b></p>'
+        + '<blockquote>Kode pairing sudah kedaluwarsa (lewat 5 menit) \u2014 pesan kodenya dihapus. Buat kode baru bila masih perlu menautkan HP.</blockquote>'
+        + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="tautgen">' + padLabel('BUAT KODE BARU', 44) + '</tg-button></tg-button-row>';
+      sendRich(chatId, html, 'Kode pairing kedaluwarsa \u2014 tekan BUAT KODE BARU.');
+    }
+  } catch (e) {}
+}, 10000);
 server.listen(PORT, () => console.log('[server] jalan di port ' + PORT + ' | parent: ' + (PARENT_IDS.length ? PARENT_IDS.join(',') : '(belum diisi)') + ' | kode pairing aktif'));
 poll();
