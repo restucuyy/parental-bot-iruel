@@ -117,7 +117,7 @@ function startRichHtml() {
   const devList = devs.length ? devs.map(x => x.name + ' (' + (deviceOnline(x) ? 'Online' : 'Offline') + ')').join(', ') : 'Belum ada';
   const jeda = p.pauseUntil && p.pauseUntil > now() ? 'Dijeda s/d ' + new Date(p.pauseUntil).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : 'Tidak dijeda';
   return ''
-    + '<h3>Selamat Datang di Parental Control</h3>'
+    + '<p><b>Selamat Datang di Parental Control</b></p>'
     + '<blockquote>Halo Ayah/Bunda. Dari sini Anda mengendalikan HP anak: tautkan perangkat, matikan layar, atur timer bermain, dan jeda perangkat kapan pun perlu. Satu tombol darurat di paling atas: <b>VIDEO POLISI</b>, sekali tekan layar HP anak langsung menampilkannya.</blockquote>'
     + '<table bordered striped>'
     + '<tr><th>INFO</th><th>KETERANGAN</th></tr>'
@@ -138,7 +138,7 @@ function startRichHtml() {
 }
 function deviceRichHtml() {
   const ids = Object.keys(db.devices);
-  return '<h3>DEVICE</h3>'
+  return '<p><b>DEVICE</b></p>'
     + '<blockquote>Kelola HP anak yang tertaut ke bot ini: tambah HP baru, lepas HP, atau lihat daftarnya.</blockquote>'
     + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr>'
     + '<tr><td>Jumlah Tertaut</td><td>' + ids.length + ' HP</td></tr>'
@@ -153,7 +153,7 @@ function deviceRichHtml() {
 function ftTarget(fitur) { const t = (db.featureTargets || {})[fitur]; return t || '*'; }
 function ftTargetName(fitur) { const t = ftTarget(fitur); return t === '*' ? 'Semua HP' : ((db.devices[t] || {}).name || 'Semua HP'); }
 function polisiRichHtml() {
-  return '<h3>VIDEO POLISI</h3>'
+  return '<p><b>VIDEO POLISI</b></p>'
     + '<blockquote>Video peringatan yang tampil full-screen di HP anak dan terkunci di sana sampai kamu buka lagi. Pasang videonya, lalu mulai dari sini.</blockquote>'
     + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr>'
     + '<tr><td>Video</td><td>' + (db.scareVideo ? 'Siap \u2014 ' + esc(db.scareVideo.fileName || 'video') : 'Belum dipasang (video bawaan aplikasi tetap dipakai)') + '</td></tr>'
@@ -167,7 +167,7 @@ function fiturRichHtml(fitur) {
   const info = fitur === 'matikan' ? 'Urutan di HP anak: video polisi tampil \u00b120 detik dulu, baru layar mati & terkunci.'
     : fitur === 'kunci' ? 'HP anak langsung terkunci ke layar blokir sampai kamu buka lagi.'
     : 'Membuka kunci, menghentikan video polisi, dan mengakhiri jeda pada device tujuan.';
-  return '<h3>' + esc(label) + '</h3>'
+  return '<p><b>' + esc(label) + '</b></p>'
     + '<blockquote>' + info + '</blockquote>'
     + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr>'
     + '<tr><td>Device Tujuan</td><td>' + esc(ftTargetName(fitur)) + '</td></tr></table>'
@@ -185,7 +185,7 @@ function pickTargetRichHtml(fitur, prefix) {
     btns += '</tg-button-row>';
   }
   btns += '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
-  return '<h3>' + esc(FITUR_LABEL[fitur] || fitur) + ' \u2014 PILIH DEVICE</h3>'
+  return '<p><b>' + esc(FITUR_LABEL[fitur] || fitur) + ' \u2014 PILIH DEVICE</b></p>'
     + '<blockquote>Pilih device tujuan fitur ini. Pilihanmu diingat untuk tombol START berikutnya.</blockquote>'
     + '<table bordered striped><tr><th>PERANGKAT</th><th>KETERANGAN</th></tr>' + deviceRowsHtml() + '</table>'
     + btns;
@@ -197,7 +197,7 @@ function deviceRowsHtml() {
   return ids.map(id => { const d = db.devices[id]; return '<tr><td>' + esc(d.name) + '</td><td>' + (deviceOnline(d) ? 'Online' : 'Offline') + (d.battery != null ? ' \u00b7 Baterai ' + d.battery + '%' : '') + '</td></tr>'; }).join('');
 }
 function listDeviceRichHtml() {
-  return '<h3>LIST DEVICE</h3>'
+  return '<p><b>LIST DEVICE</b></p>'
     + '<blockquote>Semua HP anak yang tertaut ke bot ini. Satu kode pairing yang sama bisa dipakai di banyak HP.</blockquote>'
     + '<table bordered striped><tr><th>PERANGKAT</th><th>KETERANGAN</th></tr>' + deviceRowsHtml() + '</table>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
@@ -212,7 +212,7 @@ function pickDeviceRichHtml(fitur) {
     btns += '</tg-button-row>';
   }
   btns += '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
-  return '<h3>' + esc(FITUR_LABEL[fitur] || fitur) + ' — PILIH DEVICE</h3>'
+  return '<p><b>' + esc(FITUR_LABEL[fitur] || fitur) + ' — PILIH DEVICE</b></p>'
     + '<blockquote>Perintah ini dikirim ke HP yang kamu pilih di bawah, atau ke semua HP sekaligus.</blockquote>'
     + '<table bordered striped><tr><th>PERANGKAT</th><th>KETERANGAN</th></tr>' + deviceRowsHtml() + '</table>'
     + btns;
@@ -227,7 +227,7 @@ function delDeviceRichHtml() {
     btns += '</tg-button-row>';
   }
   btns += '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
-  return '<h3>- DEVICE — HAPUS PERANGKAT</h3>'
+  return '<p><b>- DEVICE — HAPUS PERANGKAT</b></p>'
     + '<blockquote>Tekan nama HP untuk melepasnya dari bot ini. Bila aplikasinya di HP itu masih terpasang dan aktif, HP bisa tertaut lagi — hapus juga aplikasinya di HP anak untuk melepas total.</blockquote>'
     + '<table bordered striped><tr><th>PERANGKAT</th><th>KETERANGAN</th></tr>' + deviceRowsHtml() + '</table>'
     + btns;
@@ -240,12 +240,13 @@ function timerRichHtml() {
     if (pd && Object.prototype.hasOwnProperty.call(pd, 'dailyLimitMinutes')) rows += '<tr><td>Timer ' + esc((db.devices[id] || {}).name || id) + '</td><td>' + (pd.dailyLimitMinutes ? fmtMin(pd.dailyLimitMinutes) + ' / hari' : 'Mati') + '</td></tr>';
   }
   return ''
-    + '<h3>TIMER PERANGKAT</h3>'
+    + '<p><b>TIMER PERANGKAT</b></p>'
     + '<blockquote>Pilih lama timernya dulu, sesudah itu baru pilih HP-nya. Lewat dari batas ini, perangkat terkunci otomatis sampai besok.</blockquote>'
     + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr>' + rows + '</table>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="tset_5">' + padLabel('5 MENIT', 13) + '</tg-button><tg-button type="callback_data" style="primary" data="tset_10">' + padLabel('10 MENIT', 13) + '</tg-button></tg-button-row>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="tset_20">' + padLabel('20 MENIT', 13) + '</tg-button><tg-button type="callback_data" style="primary" data="tset_30">' + padLabel('30 MENIT', 13) + '</tg-button></tg-button-row>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="tset_0">' + padLabel('MATIKAN TIMER', 28) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="info_jadwal">' + padLabel('JADWAL KUNCI', 15) + '</tg-button><tg-button type="callback_data" style="success" data="presetkecil">' + padLabel('PRESET ANAK KECIL', 15) + '</tg-button></tg-button-row>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
 }
 function pickAfterHtml(kind, n) {
@@ -257,7 +258,7 @@ function pickAfterHtml(kind, n) {
     btns += '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="' + prefix + id + '">' + padLabel(esc(db.devices[id].name), 28) + '</tg-button></tg-button-row>';
   }
   btns += '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="' + (isTimer ? 'timer' : 'jeda') + '">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
-  return '<h3>' + title + ' \u2014 PILIH DEVICE</h3>'
+  return '<p><b>' + title + ' \u2014 PILIH DEVICE</b></p>'
     + '<blockquote>Pilih HP yang mau dipasangi ' + (isTimer ? 'timer' : 'jeda') + ' ini, atau semua HP sekaligus.</blockquote>'
     + '<table bordered striped><tr><th>PERANGKAT</th><th>KETERANGAN</th></tr>' + deviceRowsHtml() + '</table>'
     + btns;
@@ -266,7 +267,7 @@ function jedaRichHtml() {
   const p = db.policy;
   const sisa = p.pauseUntil && p.pauseUntil > now() ? Math.ceil((p.pauseUntil - now()) / 60000) : 0;
   return ''
-    + '<h3>JEDA PERANGKAT</h3>'
+    + '<p><b>JEDA PERANGKAT</b></p>'
     + '<blockquote>Pilih lama jedanya dulu, sesudah itu baru pilih HP-nya. Selama jeda, semua aplikasi di HP anak tertutup.</blockquote>'
     + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr>'
     + '<tr><td>Jeda Umum</td><td>' + (sisa ? 'Sedang dijeda \u00b1' + sisa + ' menit lagi' : 'Tidak dijeda') + '</td></tr></table>'
@@ -285,7 +286,7 @@ function toRichHtml(text) {
     if (!line) { flushQuote(); continue; }
     const plain = esc(line.replace(/\*/g, '').replace(/`/g, ''));
     const bold = line.match(/^\*(.+)\*$/);
-    if (bold && !line.includes(':')) { flushRows(); flushQuote(); html += '<h3>' + esc(bold[1]) + '</h3>'; continue; }
+    if (bold && !line.includes(':')) { flushRows(); flushQuote(); html += '<p><b>' + esc(bold[1]) + '</b></p>'; continue; }
     const kv = plain.match(/^([^:\u2022\-]{2,32}):\s+(.+)$/);
     if (kv) { flushQuote(); rows.push('<tr><td>' + esc(kv[1].trim()) + '</td><td>' + esc(kv[2]) + '</td></tr>'); continue; }
     if (/^[\u2022\-]\s+/.test(line)) {
@@ -347,6 +348,67 @@ function jadwalText() {
   return t;
 }
 
+
+function statusRichHtml() {
+  let html = '<p><b>STATUS HP</b></p>' + toRichHtml(statusText());
+  html += '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="kunci">' + padLabel('KUNCI HP', 13) + '</tg-button><tg-button type="callback_data" style="success" data="buka">' + padLabel('BUKA KUNCI', 13) + '</tg-button></tg-button-row>';
+  html += '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
+  return html;
+}
+function topApps() {
+  const id = firstDeviceId(); if (!id) return [];
+  const u = db.usage[id]; if (!u) return [];
+  return (u.apps || []).slice().sort((a, b) => b.minutes - a.minutes).slice(0, 5);
+}
+function laporanRichHtml() {
+  let html = '<p><b>LAPORAN PEMAKAIAN</b></p>' + toRichHtml(laporanText());
+  const apps = topApps();
+  if (apps.length) {
+    html += '<blockquote>Tekan nama aplikasi untuk memblokirnya atau mengatur batas waktunya.</blockquote>';
+    for (const a of apps) html += '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="app_' + esc(a.package) + '">' + padLabel(esc(a.label || a.package), 28) + '</tg-button></tg-button-row>';
+  }
+  html += '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="daftarblokir">' + padLabel('DAFTAR BLOKIR', 28) + '</tg-button></tg-button-row>';
+  html += '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
+  return html;
+}
+function appRichHtml(pkg) {
+  const apps = topApps();
+  const a = apps.find(x => x.package === pkg);
+  const label = a ? (a.label || pkg) : pkg;
+  const blocked = db.policy.blockedApps.includes(pkg);
+  const lim = (db.policy.perAppLimits || {})[pkg];
+  return '<p><b>' + esc(label) + '</b></p>'
+    + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr>'
+    + '<tr><td>Paket</td><td>' + esc(pkg) + '</td></tr>'
+    + '<tr><td>Status</td><td>' + (blocked ? 'Diblokir' : 'Diizinkan') + '</td></tr>'
+    + '<tr><td>Batas Waktu</td><td>' + (lim ? fmtMin(lim) + ' / hari' : 'Ikut timer umum') + '</td></tr></table>'
+    + '<tg-button-row align="center">' + (blocked
+      ? '<tg-button type="callback_data" style="success" data="appunblk_' + esc(pkg) + '">' + padLabel('IZINKAN', 28) + '</tg-button>'
+      : '<tg-button type="callback_data" style="danger" data="appblok_' + esc(pkg) + '">' + padLabel('BLOKIR', 28) + '</tg-button>') + '</tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="applimit_' + esc(pkg) + '_30">' + padLabel('BATAS 30 MENIT', 15) + '</tg-button><tg-button type="callback_data" style="primary" data="applimit_' + esc(pkg) + '_60">' + padLabel('BATAS 60 MENIT', 15) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="applimit_' + esc(pkg) + '_0">' + padLabel('HAPUS BATAS', 15) + '</tg-button><tg-button type="callback_data" style="link" data="laporan">' + padLabel('Kembali', 15) + '</tg-button></tg-button-row>';
+}
+function daftarBlokirRichHtml() {
+  const list = db.policy.blockedApps || [];
+  let rows = list.length ? list.map(x => '<tr><td>' + esc(x) + '</td><td>Diblokir</td></tr>').join('') : '<tr><td colspan="2">Belum ada aplikasi yang diblokir</td></tr>';
+  let html = '<p><b>DAFTAR BLOKIR</b></p>'
+    + '<blockquote>Blokir aplikasi baru dari tombol LAPORAN, lalu tekan nama aplikasinya. Tekan IZINKAN di bawah untuk membuka blokir.</blockquote>'
+    + '<table bordered striped><tr><th>APLIKASI</th><th>KETERANGAN</th></tr>' + rows + '</table>';
+  for (const x of list) html += '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="unblk_' + esc(x) + '">' + padLabel('Izinkan ' + x, 28) + '</tg-button></tg-button-row>';
+  html += '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
+  return html;
+}
+function jadwalRichHtml() {
+  const list = db.policy.schedules || [];
+  let rows = list.length ? list.map((x, i) => '<tr><td>' + (i + 1) + '. ' + esc(x.from) + '\u2013' + esc(x.to) + '</td><td>' + esc(x.label || 'Kunci otomatis') + '</td></tr>').join('') : '<tr><td colspan="2">Belum ada jadwal</td></tr>';
+  return '<p><b>JADWAL KUNCI</b></p>'
+    + '<blockquote>HP anak terkunci otomatis pada jam-jam ini setiap hari. Tekan jadwal siap pakai untuk menambah.</blockquote>'
+    + '<table bordered striped><tr><th>JADWAL</th><th>KETERANGAN</th></tr>' + rows + '</table>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="sch_belajar">' + padLabel('19:00-21:00 Belajar', 21) + '</tg-button><tg-button type="callback_data" style="primary" data="sch_tidur">' + padLabel('20:00-05:30 Tidur', 21) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="sch_sekolah">' + padLabel('07:00-13:00 Sekolah', 21) + '</tg-button><tg-button type="callback_data" style="danger" data="schdel">' + padLabel('Hapus Semua', 21) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
+}
+
 async function handleCommand(msg) {
   const chatId = msg.chat.id; const fromId = msg.from && msg.from.id;
   const text = (msg.text || '').trim();
@@ -355,7 +417,7 @@ async function handleCommand(msg) {
 
   if (cmd === '/start') {
     if (!isParent(fromId)) {
-      return sendRich(chatId, '<h3>Bot Parental — Khusus Orang Tua</h3><table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr><tr><td>ID Telegram kamu</td><td>' + esc(fromId) + '</td></tr><tr><td>Caranya</td><td>Masukkan ID itu ke PARENT_IDS di file .env server, lalu restart bot</td></tr></table>', 'Bot parental ini khusus orang tua.', false);
+      return sendRich(chatId, '<p><b>Bot Parental — Khusus Orang Tua</b></p><table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr><tr><td>ID Telegram kamu</td><td>' + esc(fromId) + '</td></tr><tr><td>Caranya</td><td>Masukkan ID itu ke PARENT_IDS di file .env server, lalu restart bot</td></tr></table>', 'Bot parental ini khusus orang tua.', false);
     }
     return sendRich(chatId, startRichHtml(), '👨‍👩‍👧 *Parental Control*\nTombol paling atas adalah tombol daruratmu: *satu kali tekan, layar HP anak langsung jadi video polisi* dan terkunci di sana sampai kamu matikan.\n\nPilih menu di bawah, atau pakai perintah:\n/laporan /status /kunci /buka\n/blokir <paket> /izin <paket>\n/batas <menit> /batasapp <paket> <menit>\n/jadwal <HH:MM-HH:MM> <label>\n/videopolisi — video yang muncul saat HP dibatasi (atau kirim video langsung ke sini)');
   }
@@ -416,6 +478,24 @@ async function handleCommand(msg) {
       delete db.devices[arg]; delete db.usage[arg]; saveDb();
       return send('🗑 *Device dihapus*\nNama: ' + hd.name + '\nStatus: Terlepas dari bot\nCatatan: bila aplikasi di HP itu masih terpasang dan aktif, HP bisa tertaut lagi. Hapus juga aplikasinya di HP anak untuk melepas total.');
     }
+    case '/app': {
+      if (!arg) return send('Aplikasi tidak ditemukan.');
+      return sendRich(chatId, appRichHtml(arg), 'Pengaturan aplikasi ' + arg);
+    }
+    case '/appblok': {
+      if (arg && !db.policy.blockedApps.includes(arg)) db.policy.blockedApps.push(arg);
+      saveDb(); return sendRich(chatId, appRichHtml(arg), 'Aplikasi diblokir.');
+    }
+    case '/appunblk': {
+      db.policy.blockedApps = db.policy.blockedApps.filter(x => x !== arg); saveDb();
+      return sendRich(chatId, appRichHtml(arg), 'Blokir dibuka.');
+    }
+    case '/applimit': {
+      const pkg = rest[0]; const n = parseInt(rest[1], 10);
+      if (!pkg || isNaN(n)) return send('Format batas salah.');
+      if (n <= 0) delete db.policy.perAppLimits[pkg]; else db.policy.perAppLimits[pkg] = n;
+      saveDb(); return sendRich(chatId, appRichHtml(pkg), 'Batas aplikasi diatur.');
+    }
     case '/fitur': {
       if (arg === 'polisi') return sendRich(chatId, polisiRichHtml(), 'Menu VIDEO POLISI.');
       if (FITUR_LABEL[arg]) return sendRich(chatId, fiturRichHtml(arg), 'Menu ' + FITUR_LABEL[arg] + '.');
@@ -445,7 +525,7 @@ async function handleCommand(msg) {
     }
     case '/pstart': {
       if (!Object.keys(db.devices).length) return send('Belum ada HP anak yang tertaut. Tambah dulu lewat tombol DEVICE.');
-      const html = '<h3>START VIDEO \u2014 PILIH DEVICE</h3>'
+      const html = '<p><b>START VIDEO \u2014 PILIH DEVICE</b></p>'
         + '<blockquote>Pilih HP yang layarnya mau ditampilkan video polisi, atau semua HP sekaligus.</blockquote>'
         + '<table bordered striped><tr><th>PERANGKAT</th><th>KETERANGAN</th></tr>' + deviceRowsHtml() + '</table>'
         + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="pgo_all">' + padLabel('Semua HP', 28) + '</tg-button></tg-button-row>'
@@ -460,7 +540,7 @@ async function handleCommand(msg) {
       if (t === '*') db.policy.scareActive = true;
       queueCommand('scare', null, t); saveDb();
       const txt = '\🚨 VIDEO POLISI DITAMPILKAN. Dalam \u00b110 detik layar HP anak berubah jadi video itu dan terkunci di sana, Tekan button dibawah untuk buka';
-      const html = '<h3>VIDEO POLISI</h3><blockquote>' + txt + '</blockquote>'
+      const html = '<p><b>VIDEO POLISI</b></p><blockquote>' + txt + '</blockquote>'
         + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr><tr><td>Target</td><td>' + esc(tname) + '</td></tr></table>'
         + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="pbuka_' + (t === '*' ? 'all' : t) + '">' + padLabel('BUKA', 28) + '</tg-button></tg-button-row>';
       return sendRich(chatId, html, txt);
@@ -553,8 +633,8 @@ async function handleCommand(msg) {
       saveDb();
       return send('\u25b6 *Jeda diakhiri*\nTarget: ' + (target === 'all' ? 'Semua HP' : db.devices[target].name));
     }
-    case '/laporan': return send(laporanText());
-    case '/status': return send(statusText());
+    case '/laporan': return sendRich(chatId, laporanRichHtml(), laporanText());
+    case '/status': return sendRich(chatId, statusRichHtml(), statusText());
     case '/kunci':
       db.policy.locked = true; queueCommand('lock'); saveDb();
       return send('🔒 Perintah *KUNCI* dikirim. HP anak akan terkunci dalam ±1 menit (atau langsung bila sedang online).');
@@ -579,7 +659,7 @@ async function handleCommand(msg) {
       return send('✅ Blokir `' + arg + '` dicabut.');
     }
     case '/daftarblokir':
-      return send('🚫 *Aplikasi diblokir:*\n' + (db.policy.blockedApps.length ? db.policy.blockedApps.map(x => '• `' + x + '`').join('\n') : 'Status: Kosong — belum ada aplikasi yang diblokir'));
+      return sendRich(chatId, daftarBlokirRichHtml(), 'Daftar aplikasi yang diblokir.');
     case '/batas': {
       const n = parseInt(arg, 10); if (isNaN(n) || n < 0) return send(batasText());
       db.policy.dailyLimitMinutes = n; saveDb();
@@ -593,7 +673,7 @@ async function handleCommand(msg) {
     }
     case '/jadwal': {
       const m = arg.match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})\s*(.*)/);
-      if (!m) return send(jadwalText());
+      if (!m) return sendRich(chatId, jadwalRichHtml(), jadwalText());
       db.policy.schedules.push({ from: m[1].padStart(5, '0'), to: m[2].padStart(5, '0'), label: m[3] || '' }); saveDb();
       return send('🗓 Jadwal ditambah: *' + m[1] + '–' + m[2] + '* HP terkunci di jam ini setiap hari.');
     }
@@ -645,6 +725,16 @@ async function handleCallback(cb) {
   if (cb.data && cb.data.indexOf('fstart_') === 0) { fake.text = '/fstart ' + cb.data.slice(7); return handleCommand(fake); }
   if (cb.data && cb.data.indexOf('pbuka_') === 0) { fake.text = '/pbuka ' + cb.data.slice(6); return handleCommand(fake); }
   if (cb.data && cb.data.indexOf('pgo_') === 0) { fake.text = '/pgo ' + cb.data.slice(4); return handleCommand(fake); }
+  if (cb.data === 'presetkecil') { fake.text = '/presetanakkecil'; return handleCommand(fake); }
+  if (cb.data === 'sch_belajar') { fake.text = '/jadwal 19:00-21:00 belajar'; return handleCommand(fake); }
+  if (cb.data === 'sch_tidur') { fake.text = '/jadwal 20:00-05:30 tidur malam'; return handleCommand(fake); }
+  if (cb.data === 'sch_sekolah') { fake.text = '/jadwal 07:00-13:00 sekolah'; return handleCommand(fake); }
+  if (cb.data === 'schdel') { fake.text = '/hapusjadwal'; return handleCommand(fake); }
+  if (cb.data && cb.data.indexOf('appblok_') === 0) { fake.text = '/appblok ' + cb.data.slice(8); return handleCommand(fake); }
+  if (cb.data && cb.data.indexOf('appunblk_') === 0) { fake.text = '/appunblk ' + cb.data.slice(9); return handleCommand(fake); }
+  if (cb.data && cb.data.indexOf('applimit_') === 0) { const r = cb.data.slice(9); const li = r.lastIndexOf('_'); fake.text = '/applimit ' + r.slice(0, li) + ' ' + r.slice(li + 1); return handleCommand(fake); }
+  if (cb.data && cb.data.indexOf('unblk_') === 0) { fake.text = '/appunblk ' + cb.data.slice(6); return handleCommand(fake); }
+  if (cb.data && cb.data.indexOf('app_') === 0) { fake.text = '/app ' + cb.data.slice(4); return handleCommand(fake); }
   if (cb.data && cb.data.indexOf('tset_') === 0) { fake.text = '/tset ' + cb.data.slice(5); return handleCommand(fake); }
   if (cb.data && cb.data.indexOf('jset_') === 0) { fake.text = '/jset ' + cb.data.slice(5); return handleCommand(fake); }
   if (cb.data && cb.data.indexOf('tgo_') === 0) { const r = cb.data.slice(4); const li = r.lastIndexOf('_'); fake.text = '/tgo ' + r.slice(0, li) + ' ' + r.slice(li + 1); return handleCommand(fake); }
