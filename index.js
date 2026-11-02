@@ -40,6 +40,7 @@ let db = {
     scareActive: false,            // true = layar HP anak sedang menampilkan video peringatan (polisi)
     pauseUntil: 0,                 // JEDA PERANGKAT: epoch ms sampai kapan perangkat dijeda total
     dailyLimitMinutes: 0,          // 0 = tanpa batas
+    sessionUntil: 0,               // sesi timer: epoch ms berakhirnya sesi (0 = tidak ada sesi)
     perAppLimits: {},              // package -> menit/hari
     blockedApps: [],               // [package]
     schedules: []                  // [{from:"19:00", to:"21:00", label:"belajar"}]
@@ -236,14 +237,19 @@ function delDeviceRichHtml() {
 }
 function timerRichHtml() {
   const p = db.policy;
-  let rows = '<tr><td>Timer Umum</td><td>' + (p.dailyLimitMinutes ? fmtMin(p.dailyLimitMinutes) + ' / hari' : 'Tanpa batas') + '</td></tr>';
+  const sisaSesi = p.sessionUntil && p.sessionUntil > now() ? Math.ceil((p.sessionUntil - now()) / 60000) : 0;
+  let rows = '<tr><td>Sesi Berjalan</td><td>' + (sisaSesi ? 'Sisa \u00b1' + sisaSesi + ' menit' : (p.sessionUntil ? 'Sudah habis \u2014 HP terkunci' : 'Tidak ada sesi')) + '</td></tr>';
+  rows += '<tr><td>Batas Harian</td><td>' + (p.dailyLimitMinutes ? fmtMin(p.dailyLimitMinutes) + ' / hari' : 'Tanpa batas') + '</td></tr>';
   for (const id of Object.keys(db.perDevice || {})) {
     const pd = db.perDevice[id];
-    if (pd && Object.prototype.hasOwnProperty.call(pd, 'dailyLimitMinutes')) rows += '<tr><td>Timer ' + esc((db.devices[id] || {}).name || id) + '</td><td>' + (pd.dailyLimitMinutes ? fmtMin(pd.dailyLimitMinutes) + ' / hari' : 'Mati') + '</td></tr>';
+    if (!pd) continue;
+    const nm = (db.devices[id] || {}).name || id;
+    if (Object.prototype.hasOwnProperty.call(pd, 'sessionUntil')) rows += '<tr><td>Sesi ' + esc(nm) + '</td><td>' + (pd.sessionUntil > now() ? 'Sisa \u00b1' + Math.ceil((pd.sessionUntil - now()) / 60000) + ' menit' : (pd.sessionUntil ? 'Sudah habis' : 'Tidak ada sesi')) + '</td></tr>';
+    if (Object.prototype.hasOwnProperty.call(pd, 'dailyLimitMinutes')) rows += '<tr><td>Batas ' + esc(nm) + '</td><td>' + (pd.dailyLimitMinutes ? fmtMin(pd.dailyLimitMinutes) + ' / hari' : 'Mati') + '</td></tr>';
   }
   return ''
     + '<p><b>TIMER PERANGKAT</b></p>'
-    + '<blockquote>Pilih lama timernya dulu, sesudah itu baru pilih HP-nya. Lewat dari batas ini, perangkat terkunci otomatis sampai besok.</blockquote>'
+    + '<blockquote>Pilih lama sesinya dulu, lalu pilih HP-nya. Di HP anak muncul bubble hitung mundur menit:detik; begitu habis, HP langsung mati dan terkunci \u2014 dibuka lagi hanya bisa dari bot ini.</blockquote>'
     + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr>' + rows + '</table>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="tset_5">' + padLabel('5 MENIT', 13) + '</tg-button><tg-button type="callback_data" style="primary" data="tset_10">' + padLabel('10 MENIT', 13) + '</tg-button></tg-button-row>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="tset_20">' + padLabel('20 MENIT', 13) + '</tg-button><tg-button type="callback_data" style="primary" data="tset_30">' + padLabel('30 MENIT', 13) + '</tg-button></tg-button-row>'
@@ -550,7 +556,8 @@ async function handleCommand(msg) {
     case '/pbuka': {
       const t = arg === 'all' || !arg ? '*' : arg;
       const tname = t === '*' ? 'Semua HP' : ((db.devices[t] || {}).name || t);
-      if (t === '*') { db.policy.scareActive = false; db.policy.locked = false; }
+      if (t === '*') { db.policy.scareActive = false; db.policy.locked = false; db.policy.sessionUntil = 0; }
+      else { db.perDevice = db.perDevice || {}; if (db.perDevice[t]) delete db.perDevice[t].sessionUntil; }
       queueCommand('unscare', null, t); queueCommand('unlock', null, t); saveDb();
       return send('\🔓 *DIBUKA*\nTarget: ' + tname + '\nStatus: Video polisi berhenti, kunci dibuka');
     }
@@ -591,7 +598,8 @@ async function handleCommand(msg) {
         return send('🔒 *KUNCI dikirim*\nTarget: ' + tname);
       }
       if (fitur === 'buka') {
-        if (target === 'all') { db.policy.locked = false; db.policy.scareActive = false; db.policy.pauseUntil = 0; }
+        if (target === 'all') { db.policy.locked = false; db.policy.scareActive = false; db.policy.pauseUntil = 0; db.policy.sessionUntil = 0; for (const id of Object.keys(db.perDevice || {})) { if (db.perDevice[id]) delete db.perDevice[id].sessionUntil; } }
+        else { db.perDevice = db.perDevice || {}; if (db.perDevice[target]) delete db.perDevice[target].sessionUntil; }
         queueCommand('unlock', null, devId); saveDb();
         return send('🔓 *BUKA KUNCI dikirim*\nTarget: ' + tname);
       }
@@ -607,10 +615,11 @@ async function handleCommand(msg) {
       const n = parseInt(rest[0], 10); const target = rest[1] || 'all';
       if (isNaN(n)) return send('Format timer salah.');
       if (target !== 'all' && !db.devices[target]) return send('HP tujuan tidak ditemukan.');
-      if (target === 'all') db.policy.dailyLimitMinutes = n;
-      else { db.perDevice = db.perDevice || {}; db.perDevice[target] = db.perDevice[target] || {}; db.perDevice[target].dailyLimitMinutes = n; }
+      const until = n > 0 ? now() + n * 60000 : 0;
+      if (target === 'all') db.policy.sessionUntil = until;
+      else { db.perDevice = db.perDevice || {}; db.perDevice[target] = db.perDevice[target] || {}; db.perDevice[target].sessionUntil = until; }
       saveDb();
-      return send('\u25f7 *TIMER diatur*\nTimer: ' + (n === 0 ? 'Mati (tanpa batas)' : fmtMin(n) + ' / hari') + '\nTarget: ' + (target === 'all' ? 'Semua HP' : db.devices[target].name));
+      return send('\u23f1 *SESI TIMER diatur*\nSesi: ' + (n === 0 ? 'Dimatikan' : n + ' menit (s/d ' + new Date(until).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ')') + '\nTarget: ' + (target === 'all' ? 'Semua HP' : db.devices[target].name) + '\nStatus: Di HP anak muncul bubble hitung mundur; begitu habis HP mati & terkunci sampai kamu buka dari bot');
     }
     case '/jset': {
       const n = parseInt(arg, 10);
@@ -641,7 +650,7 @@ async function handleCommand(msg) {
       db.policy.locked = true; queueCommand('lock'); saveDb();
       return send('🔒 Perintah *KUNCI* dikirim. HP anak akan terkunci dalam ±1 menit (atau langsung bila sedang online).');
     case '/buka':
-      db.policy.locked = false; db.policy.scareActive = false; db.policy.pauseUntil = 0; queueCommand('unlock'); saveDb();
+      db.policy.locked = false; db.policy.scareActive = false; db.policy.pauseUntil = 0; db.policy.sessionUntil = 0; for (const id of Object.keys(db.perDevice || {})) { if (db.perDevice[id]) delete db.perDevice[id].sessionUntil; } queueCommand('unlock'); saveDb();
       return send('🔓 Kunci dibuka. HP anak bisa dipakai lagi.');
     case '/polisi': {
       if (!db.scareVideo) return send('🎬 Video polisinya belum ada. *Kirim dulu videonya ke chat ini*, setelah itu tombol ini langsung bisa dipakai.');
@@ -812,6 +821,7 @@ const server = http.createServer(async (req, res) => {
     if (pd) {
       if (Object.prototype.hasOwnProperty.call(pd, 'dailyLimitMinutes')) pol.dailyLimitMinutes = pd.dailyLimitMinutes;
       if (Object.prototype.hasOwnProperty.call(pd, 'pauseUntil')) pol.pauseUntil = pd.pauseUntil;
+      if (Object.prototype.hasOwnProperty.call(pd, 'sessionUntil')) pol.sessionUntil = pd.sessionUntil;
     }
     return json(res, 200, { ok: true, policy: pol });
   }
