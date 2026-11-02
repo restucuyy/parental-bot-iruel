@@ -104,10 +104,12 @@ function charW(ch) {
 }
 function textW(t) { let w = 0; for (const ch of String(t)) w += charW(ch); return w; }
 function padLabel(text, target) {
-  let t = String(text);
-  let side = true;
-  while (textW(t) < target) { t = side ? '\u00A0' + t : t + '\u00A0'; side = !side; }
-  return t;
+  const t = String(text);
+  const w = textW(t);
+  if (w >= target) return t;
+  const n = Math.ceil((target - w) / 0.5);
+  const left = Math.round(n * 0.2);
+  return '\u00A0'.repeat(left) + t + '\u00A0'.repeat(n - left);
 }
 function targetName() { return (!db.targetDevice || db.targetDevice === '*') ? 'Semua HP' : ((db.devices[db.targetDevice] || {}).name || 'Semua HP'); }
 function startRichHtml() {
@@ -130,10 +132,10 @@ function startRichHtml() {
     + '</table>'
     // Tata letak user (15:31): DEVICE+LAPORAN pasangan; TIMER sendiri;
     // JEDA sendiri; TAUT HP+STATUS HP pasangan; VIDEO POLISI sendiri.
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="device">' + padLabel('DEVICE', 21) + '</tg-button><tg-button type="callback_data" style="link" data="laporan">' + padLabel('Laporan', 21) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="timer">' + padLabel('TIMER PERANGKAT', 44) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="jeda">' + padLabel('JEDA PERANGKAT', 44) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="taut">' + padLabel('TAUT HP', 21) + '</tg-button><tg-button type="callback_data" style="link" data="status">' + padLabel('Status HP', 21) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="device">' + padLabel('DEVICE', 21) + '</tg-button><tg-button type="callback_data" style="primary" data="laporan">' + padLabel('Laporan', 21) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="timer">' + padLabel('TIMER PERANGKAT', 44) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="jeda">' + padLabel('JEDA PERANGKAT', 44) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="taut">' + padLabel('TAUT HP', 21) + '</tg-button><tg-button type="callback_data" style="success" data="status">' + padLabel('Status HP', 21) + '</tg-button></tg-button-row>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="polisi">' + padLabel('\🚨 VIDEO POLISI', 44) + '</tg-button></tg-button-row>';
 }
 function deviceRichHtml() {
