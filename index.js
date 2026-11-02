@@ -81,8 +81,7 @@ const MENU = {
     [{ text: '📱 Status HP', callback_data: 'status' }, { text: '🔒 Kunci HP', callback_data: 'kunci' }],
     [{ text: '🔓 Buka Kunci', callback_data: 'buka' }, { text: '🚫 Daftar Blokir', callback_data: 'daftarblokir' }],
     [{ text: '⏱ Batas Waktu', callback_data: 'info_batas' }, { text: '🗓 Jadwal Kunci', callback_data: 'info_jadwal' }],
-    [{ text: '➕ DEVICE', callback_data: 'dev_add' }, { text: '➖ DEVICE', callback_data: 'dev_del' }],
-    [{ text: '📋 LIST DEVICE', callback_data: 'dev_list' }],
+    [{ text: '📱 DEVICE', callback_data: 'device' }],
     [{ text: '🔑 Kode Pairing', callback_data: 'kode' }]
   ]
 };
@@ -119,13 +118,23 @@ function startRichHtml() {
     + '</table>'
     // Aturan tata letak user: tombol berpasangan 2 sebaris rapi;
     // yang tidak punya pasangan tampil 1 baris full wide.
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="polisi">' + padLabel('🚨 VIDEO POLISI', 21) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="polisi">' + padLabel('🚨 VIDEO POLISI', 44) + '</tg-button></tg-button-row>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="taut">' + padLabel('TAUT HP', 10) + '</tg-button><tg-button type="callback_data" style="danger" data="matikan">' + padLabel('MATIKAN HP', 10) + '</tg-button></tg-button-row>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="timer">' + padLabel('TIMER PERANGKAT', 15) + '</tg-button><tg-button type="callback_data" style="success" data="jeda">' + padLabel('JEDA PERANGKAT', 15) + '</tg-button></tg-button-row>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="polisi_off">' + padLabel('Matikan Video Polisi', 21) + '</tg-button><tg-button type="callback_data" style="link" data="laporan">' + padLabel('Laporan', 21) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="status">' + padLabel('Status HP', 32) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="dev_add">' + padLabel('+ DEVICE', 10) + '</tg-button><tg-button type="callback_data" style="danger" data="dev_del">' + padLabel('- DEVICE', 10) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="dev_list">' + padLabel('LIST DEVICE', 32) + '</tg-button></tg-button-row>';
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="status">' + padLabel('Status HP', 21) + '</tg-button><tg-button type="callback_data" style="primary" data="device">' + padLabel('DEVICE', 21) + '</tg-button></tg-button-row>';
+}
+function deviceRichHtml() {
+  const ids = Object.keys(db.devices);
+  return '<h3>DEVICE</h3>'
+    + '<blockquote>Kelola HP anak yang tertaut ke bot ini: tambah HP baru, lepas HP, atau lihat daftarnya.</blockquote>'
+    + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr>'
+    + '<tr><td>Jumlah Tertaut</td><td>' + ids.length + ' HP</td></tr>'
+    + (ids.length ? ids.map(id => { const d = db.devices[id]; return '<tr><td>' + esc(d.name) + '</td><td>' + (deviceOnline(d) ? 'Online' : 'Offline') + '</td></tr>'; }).join('') : '<tr><td>Perangkat</td><td>Belum ada</td></tr>')
+    + '</table>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="dev_add">' + padLabel('+ DEVICE', 12) + '</tg-button><tg-button type="callback_data" style="danger" data="dev_del">' + padLabel('- DEVICE', 12) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="dev_list">' + padLabel('LIST DEVICE', 28) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
 }
 
 function ftTarget(fitur) { const t = (db.featureTargets || {})[fitur]; return t || '*'; }
@@ -367,6 +376,8 @@ async function handleCommand(msg) {
     case '/jedabatal':
       db.policy.pauseUntil = 0; saveDb();
       return send('▶ Jeda diakhiri. Perangkat anak bisa dipakai lagi.');
+    case '/device':
+      return sendRich(chatId, deviceRichHtml(), 'Menu DEVICE: + DEVICE, - DEVICE, LIST DEVICE.');
     case '/tambahdevice':
       return send('➕ *+ DEVICE — Tambah HP Anak*\nKode Pairing: `' + CHILD_CODE + '`\nAlamat Server: `163.52.135.130:2470`\nLangkah:\n1. Pasang aplikasi Parental Kids di HP anak\n2. Buka aplikasi, isi alamat server + kode pairing + nama HP\n3. Tekan Simpan + Hubungkan\n4. Aktifkan semua izin yang diminta\n5. Tekan Mulai Pemantauan\n\nSatu kode ini bisa dipakai di banyak HP anak sekaligus.');
     case '/listdevice':
@@ -542,6 +553,7 @@ async function handleCallback(cb) {
   if (!isParent(fromId)) return;
   const fake = { chat: { id: chatId }, from: cb.from, text: '' };
   const map = { menu: '/start', laporan: '/laporan', status: '/status', kunci: '/kunci', buka: '/buka', daftarblokir: '/daftarblokir', info_batas: '/batas', info_jadwal: '/jadwal', kode: '/kode', polisi: '/polisi', polisi_off: '/polisimati', taut: '/taut', matikan: '/matikan', timer: '/timer', jeda: '/jeda', timer_30: '/timer30', timer_60: '/timer60', timer_90: '/timer90', timer_120: '/timer120', timer_0: '/timer0', jeda_15: '/jeda15', jeda_30: '/jeda30', jeda_60: '/jeda60', jeda_off: '/jedabatal' };
+  if (cb.data === 'device') { fake.text = '/device'; return handleCommand(fake); }
   if (cb.data === 'dev_add') { fake.text = '/tambahdevice'; return handleCommand(fake); }
   if (cb.data === 'dev_del') { fake.text = '/pilihhapus'; return handleCommand(fake); }
   if (cb.data === 'dev_list') { fake.text = '/listdevice'; return handleCommand(fake); }
