@@ -443,6 +443,13 @@ function jadwalRichHtml() {
 }
 
 
+// BUKA TOTAL (aturan user): sekali BUKA, semua yang aktif hilang bersamaan:
+// kunci manual, video polisi, jeda, dan timer sesi — global maupun per-device.
+function clearAllLocks() {
+  db.policy.locked = false; db.policy.scareActive = false; db.policy.pauseUntil = 0; db.policy.sessionUntil = 0;
+  for (const id of Object.keys(db.perDevice || {})) { const d = db.perDevice[id]; if (d) { delete d.locked; delete d.scareActive; delete d.pauseUntil; delete d.sessionUntil; } }
+  queueCommand('unscare', null, '*'); queueCommand('unlock', null, '*');
+}
 function setTargetLocked(target, val) {
   db.perDevice = db.perDevice || {};
   if (target === '*' || target === 'all') {
@@ -605,11 +612,8 @@ async function handleCommand(msg) {
     case '/pbuka': {
       const t = arg === 'all' || !arg ? '*' : arg;
       const tname = t === '*' ? 'Semua HP' : ((db.devices[t] || {}).name || t);
-      if (t === '*') { db.policy.scareActive = false; db.policy.locked = false; db.policy.sessionUntil = 0; }
-      if (t === '*') { for (const id of Object.keys(db.perDevice || {})) { if (db.perDevice[id]) delete db.perDevice[id].locked; } }
-      else { db.perDevice = db.perDevice || {}; if (db.perDevice[t]) { delete db.perDevice[t].sessionUntil; delete db.perDevice[t].locked; delete db.perDevice[t].scareActive; delete db.perDevice[t].pauseUntil; } }
-      queueCommand('unscare', null, t); queueCommand('unlock', null, t); saveDb();
-      return send('\🔓 *DIBUKA*\nTarget: ' + tname + '\nStatus: Video polisi berhenti, kunci dibuka');
+      clearAllLocks(); saveDb();
+      return send('\uD83D\uDD13 *DIBUKA TOTAL*\nTarget: ' + tname + '\nStatus: kunci, video polisi, jeda, dan timer \u2014 semuanya dimatikan');
     }
     case '/fstart': {
       const t = ftTarget(arg);
@@ -649,10 +653,8 @@ async function handleCommand(msg) {
         return send('🔒 *KUNCI dikirim*\nTarget: ' + tname);
       }
       if (fitur === 'buka') {
-        if (target === 'all') { db.policy.locked = false; db.policy.scareActive = false; db.policy.pauseUntil = 0; db.policy.sessionUntil = 0; for (const id of Object.keys(db.perDevice || {})) { if (db.perDevice[id]) { delete db.perDevice[id].sessionUntil; delete db.perDevice[id].locked; } } }
-        else { db.perDevice = db.perDevice || {}; if (db.perDevice[target]) { delete db.perDevice[target].sessionUntil; delete db.perDevice[target].locked; delete db.perDevice[target].scareActive; delete db.perDevice[target].pauseUntil; } }
-        queueCommand('unlock', null, devId); saveDb();
-        return send('🔓 *BUKA KUNCI dikirim*\nTarget: ' + tname);
+        clearAllLocks(); saveDb();
+        return send('\uD83D\uDD13 *BUKA TOTAL dikirim*\nTarget: ' + tname + '\nStatus: kunci, video polisi, jeda, dan timer semuanya dimatikan');
       }
       return send('Fitur tidak dikenal.');
     }
@@ -703,8 +705,8 @@ async function handleCommand(msg) {
       db.policy.locked = true; queueCommand('lock'); saveDb();
       return send('🔒 Perintah *KUNCI* dikirim. HP anak akan terkunci dalam ±1 menit (atau langsung bila sedang online).');
     case '/buka':
-      db.policy.locked = false; db.policy.scareActive = false; db.policy.pauseUntil = 0; db.policy.sessionUntil = 0; for (const id of Object.keys(db.perDevice || {})) { if (db.perDevice[id]) { delete db.perDevice[id].sessionUntil; delete db.perDevice[id].locked; } } queueCommand('unlock'); saveDb();
-      return send('🔓 Kunci dibuka. HP anak bisa dipakai lagi.');
+      clearAllLocks(); saveDb();
+      return send('\uD83D\uDD13 BUKA TOTAL: kunci, video polisi, jeda, dan timer semuanya dimatikan. HP anak bisa dipakai lagi.');
     case '/polisi': {
       if (!db.scareVideo) return send('🎬 Video polisinya belum ada. *Kirim dulu videonya ke chat ini*, setelah itu tombol ini langsung bisa dipakai.');
       polisiStart('*');
