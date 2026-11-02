@@ -32,6 +32,7 @@ const DB_PATH = path.join(__dirname, 'database.json');
 let db = {
   targetDevice: '*',
   featureTargets: {}, // fitur -> deviceId | '*' (pilihan device terakhir per fitur)
+  lastBotMsg: {},    // chatId -> message_id pesan bot terakhir (agar yang lama otomatis dihapus, tidak menimbun)
   perDevice: {},      // deviceId -> {dailyLimitMinutes?, pauseUntil?} aturan khusus per HP
   devices: {},        // deviceId -> {name, model, android, lastSeen, battery, foregroundApp}
   usage: {},          // deviceId -> {date, totalMinutes, apps:[{package,label,minutes}], receivedAt}
@@ -313,11 +314,24 @@ function toRichHtml(text) {
 }
 
 async function sendRich(chatId, html, fallbackText, useMenu) {
+  let r = null;
   try {
-    const r = await tg('sendRichMessage', { chat_id: chatId, rich_message: { html } });
-    if (r && r.ok) return r;
+    r = await tg('sendRichMessage', { chat_id: chatId, rich_message: { html } });
+    if (!(r && r.ok)) r = null;
+  } catch (e) { r = null; }
+  if (!r) r = await tg('sendMessage', { chat_id: chatId, parse_mode: 'Markdown', text: fallbackText, reply_markup: useMenu === false ? undefined : MENU });
+  // Satu pesan hidup per chat: pesan bot baru menghapus pesan bot sebelumnya (perintah user 2026-11-02: jangan menimbun)
+  try {
+    const newId = r && r.result && r.result.message_id;
+    if (newId) {
+      if (!db.lastBotMsg) db.lastBotMsg = {};
+      const prev = db.lastBotMsg[chatId];
+      db.lastBotMsg[chatId] = newId;
+      saveDb();
+      if (prev && prev !== newId) tg('deleteMessage', { chat_id: chatId, message_id: prev }).catch(() => {});
+    }
   } catch (e) {}
-  return tg('sendMessage', { chat_id: chatId, parse_mode: 'Markdown', text: fallbackText, reply_markup: useMenu === false ? undefined : MENU });
+  return r;
 }
 
 function laporanText() {
