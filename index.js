@@ -119,7 +119,7 @@ function startRichHtml() {
   const status = !d ? 'Belum tertaut' : (deviceOnline(d) ? 'Online' : 'Offline');
   const devs = Object.values(db.devices);
   const devList = devs.length ? devs.map(x => x.name + ' (' + (deviceOnline(x) ? 'Online' : 'Offline') + ')').join(', ') : 'Belum ada';
-  const jeda = p.pauseUntil && p.pauseUntil > now() ? 'Dijeda s/d ' + new Date(p.pauseUntil).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : 'Tidak dijeda';
+  const jeda = p.pauseUntil && p.pauseUntil > now() ? 'Dijeda s/d ' + new Date(p.pauseUntil).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }) : 'Tidak dijeda';
   return ''
     + '<p><b>Selamat Datang di Parental Control</b></p>'
     + '<blockquote>Halo Ayah/Bunda. Dari sini Anda mengendalikan HP anak: tautkan perangkat, matikan layar, atur timer bermain, dan jeda perangkat kapan pun perlu. Satu tombol darurat di paling atas: <b>VIDEO POLISI</b>, sekali tekan layar HP anak langsung menampilkannya.</blockquote>'
@@ -322,7 +322,7 @@ async function sendRich(chatId, html, fallbackText, useMenu) {
   if (!r) r = await tg('sendMessage', { chat_id: chatId, parse_mode: 'Markdown', text: fallbackText, reply_markup: useMenu === false ? undefined : MENU });
   // Satu pesan hidup per chat: pesan bot baru menghapus pesan bot sebelumnya (perintah user 2026-11-02: jangan menimbun)
   try {
-    const newId = r && r.result && r.result.message_id;
+    const newId = r && ((r.result && (r.result.message_id || (r.result.message && r.result.message.message_id))) || r.message_id);
     if (newId) {
       if (!db.lastBotMsg) db.lastBotMsg = {};
       const prev = db.lastBotMsg[chatId];
@@ -352,7 +352,7 @@ function statusText() {
   const out = ['📱 *Status HP anak*'];
   for (const id of ids) {
     const d = db.devices[id];
-    out.push('Nama: ' + d.name + '\nModel: ' + (d.model || '-') + ' (Android ' + (d.android || '-') + ')\nStatus: ' + (deviceOnline(d) ? 'Online' : 'Offline (terakhir ' + new Date(d.lastSeen || 0).toLocaleString('id-ID') + ')') + '\nBaterai: ' + (d.battery != null ? d.battery + '%' : '-') + '\nAplikasi terbuka: ' + (d.foregroundApp || '-') + '\nTerkunci: ' + (db.policy.locked ? 'Ya' : 'Tidak'));
+    out.push('Nama: ' + d.name + '\nModel: ' + (d.model || '-') + ' (Android ' + (d.android || '-') + ')\nStatus: ' + (deviceOnline(d) ? 'Online' : 'Offline (terakhir ' + new Date(d.lastSeen || 0).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) + ')') + '\nBaterai: ' + (d.battery != null ? d.battery + '%' : '-') + '\nAplikasi terbuka: ' + (d.foregroundApp || '-') + '\nTerkunci: ' + (db.policy.locked ? 'Ya' : 'Tidak'));
   }
   return out.join('\n');
 }
@@ -468,7 +468,7 @@ async function handleCommand(msg) {
   const setTimerCmd = (n) => { db.policy.dailyLimitMinutes = n; saveDb(); return send('◷ *TIMER PERANGKAT diatur: ' + (n === 0 ? 'tanpa batas' : fmtMin(n) + ' / hari') + '.*\nLewat dari itu, perangkat anak terkunci sampai besok.'); };
   const setJedaCmd = (mnt) => {
     db.policy.pauseUntil = now() + mnt * 60000; queueCommand('pause'); saveDb();
-    return send('⏸ *PERANGKAT DIJEDA ' + mnt + ' menit* (s/d ' + new Date(db.policy.pauseUntil).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ').\nSemua aplikasi tertutup selama jeda. Akhiri lebih awal dengan tombol Jedanya lagi lalu pilih Akhiri Jeda, atau /buka.');
+    return send('⏸ *PERANGKAT DIJEDA ' + mnt + ' menit* (s/d ' + new Date(db.policy.pauseUntil).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }) + ').\nSemua aplikasi tertutup selama jeda. Akhiri lebih awal dengan tombol Jedanya lagi lalu pilih Akhiri Jeda, atau /buka.');
   };
 
   // Orang tua mengirim video apa pun ke bot = video itu jadi video peringatan
@@ -543,7 +543,7 @@ async function handleCommand(msg) {
       return send('Fitur tidak dikenal.');
     }
     case '/pset':
-      return send('\🎬 *+ VIDEO \u2014 PASANG VIDEO POLISI*\nVideo saat ini: ' + (db.scareVideo ? (db.scareVideo.fileName || 'video') + ' (diatur ' + new Date(db.scareVideo.setAt).toLocaleString('id-ID') + ')' : 'belum ada dari bot \u2014 video bawaan aplikasi yang dipakai') + '\n\nCara memasang / mengganti: *kirim saja video barunya ke chat ini.* Video itu otomatis tersimpan dan langsung dipakai.');
+      return send('\🎬 *+ VIDEO \u2014 PASANG VIDEO POLISI*\nVideo saat ini: ' + (db.scareVideo ? (db.scareVideo.fileName || 'video') + ' (diatur ' + new Date(db.scareVideo.setAt).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) + ')' : 'belum ada dari bot \u2014 video bawaan aplikasi yang dipakai') + '\n\nCara memasang / mengganti: *kirim saja video barunya ke chat ini.* Video itu otomatis tersimpan dan langsung dipakai.');
     case '/phapus': {
       if (!db.scareVideo) return send('\🎬 Belum ada video dari bot yang bisa dihapus. Yang tampil di HP anak saat ini adalah video bawaan aplikasi.');
       db.scareVideo = null; saveDb();
@@ -651,7 +651,7 @@ async function handleCommand(msg) {
       if (target === 'all') db.policy.sessionUntil = until;
       else { db.perDevice = db.perDevice || {}; db.perDevice[target] = db.perDevice[target] || {}; db.perDevice[target].sessionUntil = until; }
       saveDb();
-      return send('\u23f1 *SESI TIMER diatur*\nSesi: ' + (n === 0 ? 'Dimatikan' : n + ' menit (s/d ' + new Date(until).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ')') + '\nTarget: ' + (target === 'all' ? 'Semua HP' : db.devices[target].name) + '\nStatus: Di HP anak muncul bubble hitung mundur; begitu habis HP mati & terkunci sampai kamu buka dari bot');
+      return send('\u23f1 *SESI TIMER diatur*\nSesi: ' + (n === 0 ? 'Dimatikan' : n + ' menit (s/d ' + new Date(until).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }) + ')') + '\nTarget: ' + (target === 'all' ? 'Semua HP' : db.devices[target].name) + '\nStatus: Di HP anak muncul bubble hitung mundur; begitu habis HP mati & terkunci sampai kamu buka dari bot');
     }
     case '/jset': {
       const n = parseInt(arg, 10);
@@ -669,7 +669,7 @@ async function handleCommand(msg) {
         if (target === 'all') { db.policy.pauseUntil = until; queueCommand('pause', null, '*'); }
         else { db.perDevice[target] = db.perDevice[target] || {}; db.perDevice[target].pauseUntil = until; queueCommand('pause', null, target); }
         saveDb();
-        return send('\u23f8 *JEDA diatur*\nJeda: ' + n + ' menit (s/d ' + new Date(until).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ')\nTarget: ' + (target === 'all' ? 'Semua HP' : db.devices[target].name));
+        return send('\u23f8 *JEDA diatur*\nJeda: ' + n + ' menit (s/d ' + new Date(until).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }) + ')\nTarget: ' + (target === 'all' ? 'Semua HP' : db.devices[target].name));
       }
       if (target === 'all') { db.policy.pauseUntil = 0; for (const id of Object.keys(db.perDevice)) { if (db.perDevice[id]) delete db.perDevice[id].pauseUntil; } }
       else { db.perDevice[target] = db.perDevice[target] || {}; db.perDevice[target].pauseUntil = 0; }
@@ -733,7 +733,7 @@ async function handleCommand(msg) {
     }
     case '/videopolisi':
       return send(db.scareVideo
-        ? '🎬 Video peringatan saat ini: *' + (db.scareVideo.fileName || 'video') + '* (diatur ' + new Date(db.scareVideo.setAt).toLocaleString('id-ID') + ').\nKirim video baru ke sini untuk menggantinya, atau /hapusvideo untuk mematikan.'
+        ? '🎬 Video peringatan saat ini: *' + (db.scareVideo.fileName || 'video') + '* (diatur ' + new Date(db.scareVideo.setAt).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) + ').\nKirim video baru ke sini untuk menggantinya, atau /hapusvideo untuk mematikan.'
         : '🎬 Belum ada video peringatan.\n*Kirim saja sebuah video ke chat ini* (misalnya video polisi yang menyuruh berhenti main HP) — video itu otomatis jadi video yang muncul full-screen di HP anak setiap kali aplikasi dibatasi/dikunci.');
     case '/hapusvideo':
       db.scareVideo = null; saveDb();
@@ -790,6 +790,13 @@ async function handleCallback(cb) {
 let offset = 0;
 async function poll() {
   if (!BOT_TOKEN || BOT_TOKEN.includes('isi_token')) { console.log('[bot] BOT_TOKEN belum diisi, polling Telegram dilewati. API HP anak tetap jalan.'); return; }
+  // Bersihkan layar bot sisa jalan sebelumnya agar chat mulai bersih
+  if (db.lastBotMsg) {
+    for (const cid of Object.keys(db.lastBotMsg)) {
+      if (db.lastBotMsg[cid]) tg('deleteMessage', { chat_id: cid, message_id: db.lastBotMsg[cid] }).catch(() => {});
+    }
+    db.lastBotMsg = {}; saveDb();
+  }
   console.log('[bot] polling Telegram mulai...');
   while (true) {
     try {
