@@ -148,10 +148,10 @@ function deviceRichHtml() {
     + '<tr><td>Jumlah Tertaut</td><td>' + ids.length + ' HP</td></tr>'
     + (ids.length ? ids.map(id => { const d = db.devices[id]; return '<tr><td>' + esc(d.name) + '</td><td>' + (deviceOnline(d) ? 'Online' : 'Offline') + '</td></tr>'; }).join('') : '<tr><td>Perangkat</td><td>Belum ada</td></tr>')
     + '</table>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="dev_add">' + padLabel('+ DEVICE', 12) + '</tg-button><tg-button type="callback_data" style="danger" data="dev_del">' + padLabel('- DEVICE', 12) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="dev_list">' + padLabel('LIST DEVICE', 28) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="matikan">' + padLabel('MATIKAN HP', 28) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="dev_add">' + padLabel('+ DEVICE', 21) + '</tg-button><tg-button type="callback_data" style="danger" data="dev_del">' + padLabel('- DEVICE', 21) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="dev_list">' + padLabel('LIST DEVICE', 44) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="matikan">' + padLabel('MATIKAN HP', 44) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
 }
 
 function ftTarget(fitur) { const t = (db.featureTargets || {})[fitur]; return t || '*'; }
@@ -162,9 +162,9 @@ function polisiRichHtml() {
     + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr>'
     + '<tr><td>Video</td><td>' + (db.scareVideo ? 'Siap \u2014 ' + esc(db.scareVideo.fileName || 'video') : 'Belum dipasang (video bawaan aplikasi tetap dipakai)') + '</td></tr>'
     + '<tr><td>Status</td><td>' + (db.policy.scareActive ? 'Sedang tampil (semua HP)' : 'Tidak aktif') + '</td></tr></table>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="pset">' + padLabel('+ VIDEO', 13) + '</tg-button><tg-button type="callback_data" style="danger" data="phapus">' + padLabel('- VIDEO', 13) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="pstart">' + padLabel('START VIDEO', 28) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="pset">' + padLabel('+ VIDEO', 21) + '</tg-button><tg-button type="callback_data" style="danger" data="phapus">' + padLabel('- VIDEO', 21) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="pstart">' + padLabel('START VIDEO', 44) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
 }
 function fiturRichHtml(fitur) {
   const label = FITUR_LABEL[fitur] || fitur;
@@ -175,20 +175,20 @@ function fiturRichHtml(fitur) {
     + '<blockquote>' + info + '</blockquote>'
     + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr>'
     + '<tr><td>Device Tujuan</td><td>' + esc(ftTargetName(fitur)) + '</td></tr></table>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="fstart_' + fitur + '">' + padLabel(label + ' SEKARANG', 28) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="fpilih_' + fitur + '">' + padLabel('PILIH DEVICE', 28) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="fstart_' + fitur + '">' + padLabel(label + ' SEKARANG', 44) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="fpilih_' + fitur + '">' + padLabel('PILIH DEVICE', 44) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
 }
 function pickTargetRichHtml(fitur, prefix) {
   const ids = Object.keys(db.devices);
-  let btns = '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="' + prefix + '_all">' + padLabel('Semua HP', 28) + '</tg-button></tg-button-row>';
+  let btns = '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="' + prefix + '_all">' + padLabel('Semua HP', 44) + '</tg-button></tg-button-row>';
   for (let i = 0; i < ids.length; i += 2) {
     btns += '<tg-button-row align="center">';
-    btns += '<tg-button type="callback_data" style="success" data="' + prefix + '_' + ids[i] + '">' + padLabel(esc(db.devices[ids[i]].name), 15) + '</tg-button>';
-    if (ids[i + 1]) btns += '<tg-button type="callback_data" style="success" data="' + prefix + '_' + ids[i + 1] + '">' + padLabel(esc(db.devices[ids[i + 1]].name), 15) + '</tg-button>';
+    btns += '<tg-button type="callback_data" style="success" data="' + prefix + '_' + ids[i] + '">' + padLabel(esc(db.devices[ids[i]].name), 21) + '</tg-button>';
+    if (ids[i + 1]) btns += '<tg-button type="callback_data" style="success" data="' + prefix + '_' + ids[i + 1] + '">' + padLabel(esc(db.devices[ids[i + 1]].name), 21) + '</tg-button>';
     btns += '</tg-button-row>';
   }
-  btns += '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
+  btns += '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
   return '<p><b>' + esc(FITUR_LABEL[fitur] || fitur) + ' \u2014 PILIH DEVICE</b></p>'
     + '<blockquote>Pilih device tujuan fitur ini. Pilihanmu diingat untuk tombol START berikutnya.</blockquote>'
     + '<table bordered striped><tr><th>PERANGKAT</th><th>KETERANGAN</th></tr>' + deviceRowsHtml() + '</table>'
@@ -204,18 +204,18 @@ function listDeviceRichHtml() {
   return '<p><b>LIST DEVICE</b></p>'
     + '<blockquote>Semua HP anak yang tertaut ke bot ini. Satu kode pairing yang sama bisa dipakai di banyak HP.</blockquote>'
     + '<table bordered striped><tr><th>PERANGKAT</th><th>KETERANGAN</th></tr>' + deviceRowsHtml() + '</table>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
 }
 function pickDeviceRichHtml(fitur) {
   const ids = Object.keys(db.devices);
-  let btns = '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="act_' + fitur + '_all">' + padLabel('Semua HP', 28) + '</tg-button></tg-button-row>';
+  let btns = '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="act_' + fitur + '_all">' + padLabel('Semua HP', 44) + '</tg-button></tg-button-row>';
   for (let i = 0; i < ids.length; i += 2) {
     btns += '<tg-button-row align="center">';
-    btns += '<tg-button type="callback_data" style="success" data="act_' + fitur + '_' + ids[i] + '">' + padLabel(esc(db.devices[ids[i]].name), 15) + '</tg-button>';
-    if (ids[i + 1]) btns += '<tg-button type="callback_data" style="success" data="act_' + fitur + '_' + ids[i + 1] + '">' + padLabel(esc(db.devices[ids[i + 1]].name), 15) + '</tg-button>';
+    btns += '<tg-button type="callback_data" style="success" data="act_' + fitur + '_' + ids[i] + '">' + padLabel(esc(db.devices[ids[i]].name), 21) + '</tg-button>';
+    if (ids[i + 1]) btns += '<tg-button type="callback_data" style="success" data="act_' + fitur + '_' + ids[i + 1] + '">' + padLabel(esc(db.devices[ids[i + 1]].name), 21) + '</tg-button>';
     btns += '</tg-button-row>';
   }
-  btns += '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
+  btns += '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
   return '<p><b>' + esc(FITUR_LABEL[fitur] || fitur) + ' — PILIH DEVICE</b></p>'
     + '<blockquote>Perintah ini dikirim ke HP yang kamu pilih di bawah, atau ke semua HP sekaligus.</blockquote>'
     + '<table bordered striped><tr><th>PERANGKAT</th><th>KETERANGAN</th></tr>' + deviceRowsHtml() + '</table>'
@@ -226,11 +226,11 @@ function delDeviceRichHtml() {
   let btns = '';
   for (let i = 0; i < ids.length; i += 2) {
     btns += '<tg-button-row align="center">';
-    btns += '<tg-button type="callback_data" style="danger" data="del_' + ids[i] + '">' + padLabel(esc(db.devices[ids[i]].name), 15) + '</tg-button>';
-    if (ids[i + 1]) btns += '<tg-button type="callback_data" style="danger" data="del_' + ids[i + 1] + '">' + padLabel(esc(db.devices[ids[i + 1]].name), 15) + '</tg-button>';
+    btns += '<tg-button type="callback_data" style="danger" data="del_' + ids[i] + '">' + padLabel(esc(db.devices[ids[i]].name), 21) + '</tg-button>';
+    if (ids[i + 1]) btns += '<tg-button type="callback_data" style="danger" data="del_' + ids[i + 1] + '">' + padLabel(esc(db.devices[ids[i + 1]].name), 21) + '</tg-button>';
     btns += '</tg-button-row>';
   }
-  btns += '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
+  btns += '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
   return '<p><b>- DEVICE — HAPUS PERANGKAT</b></p>'
     + '<blockquote>Tekan nama HP untuk melepasnya dari bot ini. Bila aplikasinya di HP itu masih terpasang dan aktif, HP bisa tertaut lagi — hapus juga aplikasinya di HP anak untuk melepas total.</blockquote>'
     + '<table bordered striped><tr><th>PERANGKAT</th><th>KETERANGAN</th></tr>' + deviceRowsHtml() + '</table>'
@@ -252,21 +252,21 @@ function timerRichHtml() {
     + '<p><b>TIMER PERANGKAT</b></p>'
     + '<blockquote>Pilih lama sesinya dulu, lalu pilih HP-nya. Di HP anak muncul bubble hitung mundur menit:detik; begitu habis, HP langsung mati dan terkunci \u2014 dibuka lagi hanya bisa dari bot ini.</blockquote>'
     + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr>' + rows + '</table>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="tset_5">' + padLabel('5 MENIT', 13) + '</tg-button><tg-button type="callback_data" style="primary" data="tset_10">' + padLabel('10 MENIT', 13) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="tset_20">' + padLabel('20 MENIT', 13) + '</tg-button><tg-button type="callback_data" style="primary" data="tset_30">' + padLabel('30 MENIT', 13) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="tset_0">' + padLabel('MATIKAN TIMER', 28) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="info_jadwal">' + padLabel('JADWAL KUNCI', 15) + '</tg-button><tg-button type="callback_data" style="success" data="presetkecil">' + padLabel('PRESET ANAK KECIL', 15) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="tset_5">' + padLabel('5 MENIT', 21) + '</tg-button><tg-button type="callback_data" style="primary" data="tset_10">' + padLabel('10 MENIT', 21) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="tset_20">' + padLabel('20 MENIT', 21) + '</tg-button><tg-button type="callback_data" style="primary" data="tset_30">' + padLabel('30 MENIT', 21) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="tset_0">' + padLabel('MATIKAN TIMER', 44) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="info_jadwal">' + padLabel('JADWAL KUNCI', 21) + '</tg-button><tg-button type="callback_data" style="success" data="presetkecil">' + padLabel('PRESET ANAK KECIL', 21) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
 }
 function pickAfterHtml(kind, n) {
   const isTimer = kind === 'timer';
   const title = isTimer ? (n === 0 ? 'MATIKAN TIMER' : 'TIMER ' + n + ' MENIT') : (n === 0 ? 'AKHIRI JEDA' : 'JEDA ' + n + ' MENIT');
   const prefix = (isTimer ? 'tgo_' : 'jgo_') + n + '_';
-  let btns = '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="' + prefix + 'all">' + padLabel('Semua HP', 28) + '</tg-button></tg-button-row>';
+  let btns = '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="' + prefix + 'all">' + padLabel('Semua HP', 44) + '</tg-button></tg-button-row>';
   for (const id of Object.keys(db.devices)) {
-    btns += '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="' + prefix + id + '">' + padLabel(esc(db.devices[id].name), 28) + '</tg-button></tg-button-row>';
+    btns += '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="' + prefix + id + '">' + padLabel(esc(db.devices[id].name), 44) + '</tg-button></tg-button-row>';
   }
-  btns += '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="' + (isTimer ? 'timer' : 'jeda') + '">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
+  btns += '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="' + (isTimer ? 'timer' : 'jeda') + '">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
   return '<p><b>' + title + ' \u2014 PILIH DEVICE</b></p>'
     + '<blockquote>Pilih HP yang mau dipasangi ' + (isTimer ? 'timer' : 'jeda') + ' ini, atau semua HP sekaligus.</blockquote>'
     + '<table bordered striped><tr><th>PERANGKAT</th><th>KETERANGAN</th></tr>' + deviceRowsHtml() + '</table>'
@@ -280,10 +280,10 @@ function jedaRichHtml() {
     + '<blockquote>Pilih lama jedanya dulu, sesudah itu baru pilih HP-nya. Selama jeda, semua aplikasi di HP anak tertutup.</blockquote>'
     + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr>'
     + '<tr><td>Jeda Umum</td><td>' + (sisa ? 'Sedang dijeda \u00b1' + sisa + ' menit lagi' : 'Tidak dijeda') + '</td></tr></table>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="jset_15">' + padLabel('15 MENIT', 13) + '</tg-button><tg-button type="callback_data" style="success" data="jset_30">' + padLabel('30 MENIT', 13) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="jset_60">' + padLabel('60 MENIT', 13) + '</tg-button><tg-button type="callback_data" style="success" data="jset_120">' + padLabel('120 MENIT', 13) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="jset_0">' + padLabel('AKHIRI JEDA', 28) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="jset_15">' + padLabel('15 MENIT', 21) + '</tg-button><tg-button type="callback_data" style="success" data="jset_30">' + padLabel('30 MENIT', 21) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="jset_60">' + padLabel('60 MENIT', 21) + '</tg-button><tg-button type="callback_data" style="success" data="jset_120">' + padLabel('120 MENIT', 21) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="jset_0">' + padLabel('AKHIRI JEDA', 44) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
 }
 function toRichHtml(text) {
   const lines = String(text || '').split('\n');
@@ -373,8 +373,8 @@ function jadwalText() {
 
 function statusRichHtml() {
   let html = '<p><b>STATUS HP</b></p>' + toRichHtml(statusText());
-  html += '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="kunci">' + padLabel('KUNCI HP', 13) + '</tg-button><tg-button type="callback_data" style="success" data="buka">' + padLabel('BUKA KUNCI', 13) + '</tg-button></tg-button-row>';
-  html += '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
+  html += '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="kunci">' + padLabel('KUNCI HP', 21) + '</tg-button><tg-button type="callback_data" style="success" data="buka">' + padLabel('BUKA KUNCI', 21) + '</tg-button></tg-button-row>';
+  html += '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
   return html;
 }
 function topApps() {
@@ -387,10 +387,10 @@ function laporanRichHtml() {
   const apps = topApps();
   if (apps.length) {
     html += '<blockquote>Tekan nama aplikasi untuk memblokirnya atau mengatur batas waktunya.</blockquote>';
-    for (const a of apps) html += '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="app_' + esc(a.package) + '">' + padLabel(esc(a.label || a.package), 28) + '</tg-button></tg-button-row>';
+    for (const a of apps) html += '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="app_' + esc(a.package) + '">' + padLabel(esc(a.label || a.package), 44) + '</tg-button></tg-button-row>';
   }
-  html += '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="daftarblokir">' + padLabel('DAFTAR BLOKIR', 28) + '</tg-button></tg-button-row>';
-  html += '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
+  html += '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="daftarblokir">' + padLabel('DAFTAR BLOKIR', 44) + '</tg-button></tg-button-row>';
+  html += '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
   return html;
 }
 function appRichHtml(pkg) {
@@ -405,10 +405,10 @@ function appRichHtml(pkg) {
     + '<tr><td>Status</td><td>' + (blocked ? 'Diblokir' : 'Diizinkan') + '</td></tr>'
     + '<tr><td>Batas Waktu</td><td>' + (lim ? fmtMin(lim) + ' / hari' : 'Ikut timer umum') + '</td></tr></table>'
     + '<tg-button-row align="center">' + (blocked
-      ? '<tg-button type="callback_data" style="success" data="appunblk_' + esc(pkg) + '">' + padLabel('IZINKAN', 28) + '</tg-button>'
-      : '<tg-button type="callback_data" style="danger" data="appblok_' + esc(pkg) + '">' + padLabel('BLOKIR', 28) + '</tg-button>') + '</tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="applimit_' + esc(pkg) + '_30">' + padLabel('BATAS 30 MENIT', 15) + '</tg-button><tg-button type="callback_data" style="primary" data="applimit_' + esc(pkg) + '_60">' + padLabel('BATAS 60 MENIT', 15) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="applimit_' + esc(pkg) + '_0">' + padLabel('HAPUS BATAS', 15) + '</tg-button><tg-button type="callback_data" style="link" data="laporan">' + padLabel('Kembali', 15) + '</tg-button></tg-button-row>';
+      ? '<tg-button type="callback_data" style="success" data="appunblk_' + esc(pkg) + '">' + padLabel('IZINKAN', 44) + '</tg-button>'
+      : '<tg-button type="callback_data" style="danger" data="appblok_' + esc(pkg) + '">' + padLabel('BLOKIR', 44) + '</tg-button>') + '</tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="applimit_' + esc(pkg) + '_30">' + padLabel('BATAS 30 MENIT', 21) + '</tg-button><tg-button type="callback_data" style="primary" data="applimit_' + esc(pkg) + '_60">' + padLabel('BATAS 60 MENIT', 21) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="applimit_' + esc(pkg) + '_0">' + padLabel('HAPUS BATAS', 21) + '</tg-button><tg-button type="callback_data" style="link" data="laporan">' + padLabel('Kembali', 21) + '</tg-button></tg-button-row>';
 }
 function daftarBlokirRichHtml() {
   const list = db.policy.blockedApps || [];
@@ -416,8 +416,8 @@ function daftarBlokirRichHtml() {
   let html = '<p><b>DAFTAR BLOKIR</b></p>'
     + '<blockquote>Blokir aplikasi baru dari tombol LAPORAN, lalu tekan nama aplikasinya. Tekan IZINKAN di bawah untuk membuka blokir.</blockquote>'
     + '<table bordered striped><tr><th>APLIKASI</th><th>KETERANGAN</th></tr>' + rows + '</table>';
-  for (const x of list) html += '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="unblk_' + esc(x) + '">' + padLabel('Izinkan ' + x, 28) + '</tg-button></tg-button-row>';
-  html += '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
+  for (const x of list) html += '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="unblk_' + esc(x) + '">' + padLabel('Izinkan ' + x, 44) + '</tg-button></tg-button-row>';
+  html += '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
   return html;
 }
 function jadwalRichHtml() {
@@ -428,7 +428,7 @@ function jadwalRichHtml() {
     + '<table bordered striped><tr><th>JADWAL</th><th>KETERANGAN</th></tr>' + rows + '</table>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="sch_belajar">' + padLabel('19:00-21:00 Belajar', 21) + '</tg-button><tg-button type="callback_data" style="primary" data="sch_tidur">' + padLabel('20:00-05:30 Tidur', 21) + '</tg-button></tg-button-row>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="sch_sekolah">' + padLabel('07:00-13:00 Sekolah', 21) + '</tg-button><tg-button type="callback_data" style="danger" data="schdel">' + padLabel('Hapus Semua', 21) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
 }
 
 
@@ -569,9 +569,9 @@ async function handleCommand(msg) {
       const html = '<p><b>START VIDEO \u2014 PILIH DEVICE</b></p>'
         + '<blockquote>Pilih HP yang layarnya mau ditampilkan video polisi, atau semua HP sekaligus.</blockquote>'
         + '<table bordered striped><tr><th>PERANGKAT</th><th>KETERANGAN</th></tr>' + deviceRowsHtml() + '</table>'
-        + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="pgo_all">' + padLabel('Semua HP', 28) + '</tg-button></tg-button-row>'
-        + Object.keys(db.devices).map(id => '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="pgo_' + id + '">' + padLabel(esc(db.devices[id].name), 28) + '</tg-button></tg-button-row>').join('')
-        + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="polisi">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
+        + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="pgo_all">' + padLabel('Semua HP', 44) + '</tg-button></tg-button-row>'
+        + Object.keys(db.devices).map(id => '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="pgo_' + id + '">' + padLabel(esc(db.devices[id].name), 44) + '</tg-button></tg-button-row>').join('')
+        + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="polisi">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
       return sendRich(chatId, html, 'Pilih device untuk START VIDEO.');
     }
     case '/pgo': {
@@ -582,7 +582,7 @@ async function handleCommand(msg) {
       const txt = '\🚨 VIDEO POLISI DITAMPILKAN. Dalam \u00b110 detik layar HP anak berubah jadi video itu dan terkunci di sana, Tekan button dibawah untuk buka';
       const html = '<p><b>VIDEO POLISI</b></p><blockquote>' + txt + '</blockquote>'
         + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr><tr><td>Target</td><td>' + esc(tname) + '</td></tr></table>'
-        + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="pbuka_' + (t === '*' ? 'all' : t) + '">' + padLabel('BUKA', 28) + '</tg-button></tg-button-row>';
+        + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="pbuka_' + (t === '*' ? 'all' : t) + '">' + padLabel('BUKA', 44) + '</tg-button></tg-button-row>';
       return sendRich(chatId, html, txt);
     }
     case '/pbuka': {
@@ -835,12 +835,13 @@ const server = http.createServer(async (req, res) => {
     saveDb(); return json(res, 200, { ok: true, deviceId: id });
   }
   if (p === '/api/heartbeat' && req.method === 'POST') {
-    const b = await readBody(req); const d = db.devices[b.deviceId]; if (!d) return json(res, 404, { ok: false });
+    const b = await readBody(req); let d = db.devices[b.deviceId];
+    if (!d) { d = db.devices[b.deviceId] = { name: b.deviceName || 'HP Anak', model: b.model || '', android: b.androidVersion || '', lastSeen: now() }; }
     d.lastSeen = now(); if (b.battery != null) d.battery = b.battery; if (b.foregroundApp) d.foregroundApp = b.foregroundApp;
     saveDb(); return json(res, 200, { ok: true });
   }
   if (p === '/api/usage' && req.method === 'POST') {
-    const b = await readBody(req); if (!db.devices[b.deviceId]) return json(res, 404, { ok: false });
+    const b = await readBody(req); if (!db.devices[b.deviceId]) db.devices[b.deviceId] = { name: b.deviceName || 'HP Anak', model: b.model || '', android: b.androidVersion || '', lastSeen: now() };
     db.usage[b.deviceId] = { date: b.date, totalMinutes: b.totalMinutes || 0, apps: b.apps || [], receivedAt: now() };
     saveDb(); return json(res, 200, { ok: true });
   }
