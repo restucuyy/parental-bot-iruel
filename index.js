@@ -150,8 +150,7 @@ function deviceRichHtml() {
     + '<tr><td>Jumlah Tertaut</td><td>' + ids.length + ' HP</td></tr>'
     + (ids.length ? ids.map(id => { const d = db.devices[id]; return '<tr><td>' + esc(d.name) + '</td><td>' + (deviceOnline(d) ? 'Online' : 'Offline') + '</td></tr>'; }).join('') : '<tr><td>Perangkat</td><td>Belum ada</td></tr>')
     + '</table>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="dev_add">' + padLabel('+ DEVICE', 21) + '</tg-button><tg-button type="callback_data" style="danger" data="dev_del">' + padLabel('- DEVICE', 21) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="dev_list">' + padLabel('LIST DEVICE', 44) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="taut">' + padLabel('TAUT HP', 21) + '</tg-button><tg-button type="callback_data" style="danger" data="dev_del">' + padLabel('LEPAS HP', 21) + '</tg-button></tg-button-row>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="matikan">' + padLabel('MATIKAN HP', 44) + '</tg-button></tg-button-row>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
 }
@@ -559,7 +558,7 @@ async function handleCommand(msg) {
     case '/device':
       return sendRich(chatId, deviceRichHtml(), 'Menu DEVICE: + DEVICE, - DEVICE, LIST DEVICE.');
     case '/tambahdevice':
-      return send('➕ *+ DEVICE — Tambah HP Anak*\nKode Pairing: `' + CHILD_CODE + '`\nAlamat Server: `163.52.135.130:2470`\nLangkah:\n1. Pasang aplikasi Parental Kids di HP anak\n2. Buka aplikasi, isi alamat server + kode pairing + nama HP\n3. Tekan Simpan + Hubungkan\n4. Aktifkan semua izin yang diminta\n5. Tekan Mulai Pemantauan\n\nSatu kode ini bisa dipakai di banyak HP anak sekaligus.');
+      return sendRich(chatId, tautRichHtml(), 'Menu TAUT HP.');
     case '/listdevice':
       return sendRich(chatId, listDeviceRichHtml(), 'Daftar HP anak yang tertaut.');
     case '/pilihhapus':
@@ -822,7 +821,7 @@ async function handleCallback(cb) {
   const fake = { chat: { id: chatId }, from: cb.from, text: '' };
   const map = { menu: '/start', laporan: '/laporan', status: '/status', kunci: '/kunci', buka: '/buka', daftarblokir: '/daftarblokir', info_batas: '/batas', info_jadwal: '/jadwal', kode: '/kode', polisi: '/polisi', polisi_off: '/polisimati', taut: '/taut', tautgen: '/tautgen', lokasi: '/lokasi', bunyi: '/bunyi', bunyimati: '/bunyimati', matikan: '/matikan', timer: '/timer', jeda: '/jeda', timer_30: '/timer30', timer_60: '/timer60', timer_90: '/timer90', timer_120: '/timer120', timer_0: '/timer0', jeda_15: '/jeda15', jeda_30: '/jeda30', jeda_60: '/jeda60', jeda_off: '/jedabatal' };
   if (cb.data === 'device') { fake.text = '/device'; return handleCommand(fake); }
-  if (cb.data === 'dev_add') { fake.text = '/tambahdevice'; return handleCommand(fake); }
+  if (cb.data === 'dev_add') { fake.text = '/taut'; return handleCommand(fake); }
   if (cb.data === 'dev_del') { fake.text = '/pilihhapus'; return handleCommand(fake); }
   if (cb.data === 'dev_list') { fake.text = '/listdevice'; return handleCommand(fake); }
   if (cb.data === 'polisi') { fake.text = '/fitur polisi'; return handleCommand(fake); }
