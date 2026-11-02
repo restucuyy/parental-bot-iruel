@@ -46,22 +46,35 @@ let db = {
     blockedApps: [],               // [package]
     schedules: []                  // [{from:"19:00", to:"21:00", label:"belajar"}]
   },
-  commands: [],       // [{id, deviceId|'*', type, payload, createdAt, delivered}]
-  scareVideo: null    // {fileId, fileName, setAt} video peringatan (mis. polisi) dari orang tua
+  commands: [],       // [{id, deviceId|'*', type, payload, createdAt, exp, delivered}]
+  scareVideo: null,   // {fileId, fileName, setAt} video peringatan (mis. polisi) dari orang tua
+  policySeq: 0,       // v35: nomor urut kebijakan — naik setiap policy/perDevice berubah
+  lastAck: {}         // v35: deviceId -> {cmdId, type, result, appliedState, seq, at} ACK terakhir dari aplikasi
 };
-function saveDb() { try { fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 1)); } catch (e) {} }
+// v35: seq kebijakan naik tiap kali isi policy/perDevice berubah (dideteksi saat saveDb).
+let lastPolSnap = '';
+function saveDb() {
+  try {
+    const snap = JSON.stringify([db.policy, db.perDevice]);
+    if (lastPolSnap !== '' && snap !== lastPolSnap) db.policySeq = (db.policySeq || 0) + 1;
+    lastPolSnap = snap;
+  } catch (e) {}
+  try { fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 1)); } catch (e) {}
+}
 function loadDb() {
   if (fs.existsSync(DB_PATH)) {
     try { db = Object.assign(db, JSON.parse(fs.readFileSync(DB_PATH, 'utf8'))); } catch (e) {}
   }
 }
 loadDb();
+try { lastPolSnap = JSON.stringify([db.policy, db.perDevice]); } catch (e) {}
 
 const now = () => Date.now();
 function firstDeviceId() { const k = Object.keys(db.devices); return k.length ? k[0] : null; }
 function deviceOnline(d) { return d && (now() - (d.lastSeen || 0) < 120000); }
 function queueCommand(type, payload, devId) {
-  const cmd = { id: crypto.randomBytes(4).toString('hex'), deviceId: devId || '*', type, payload: payload || {}, createdAt: now(), delivered: false };
+  // v35: setiap perintah membawa id + kedaluwarsa (exp) — aplikasi membuang perintah basi.
+  const cmd = { id: crypto.randomBytes(4).toString('hex'), deviceId: devId || '*', type, payload: payload || {}, createdAt: now(), exp: now() + 120000, delivered: false };
   db.commands.push(cmd); saveDb(); return cmd;
 }
 
@@ -939,6 +952,7 @@ const server = http.createServer(async (req, res) => {
     const b = await readBody(req); let d = db.devices[b.deviceId];
     if (!d) { d = db.devices[b.deviceId] = { name: b.deviceName || 'HP Anak', model: b.model || '', android: b.androidVersion || '', lastSeen: now() }; }
     d.lastSeen = now(); if (b.battery != null) d.battery = b.battery; if (b.foregroundApp) d.foregroundApp = b.foregroundApp;
+    if (b.appliedState != null) d.appliedState = b.appliedState; // v35: keadaan terakhir yang benar-benar diterapkan aplikasi
     saveDb(); return json(res, 200, { ok: true });
   }
   if (p === '/api/usage' && req.method === 'POST') {
@@ -982,7 +996,10 @@ const server = http.createServer(async (req, res) => {
       if (Object.prototype.hasOwnProperty.call(pd, 'locked')) pol.locked = pd.locked;
       if (Object.prototype.hasOwnProperty.call(pd, 'scareActive')) pol.scareActive = pd.scareActive;
     }
-    return json(res, 200, { ok: true, policy: pol });
+    // v35: metadata kesegaran — aplikasi hanya menegakkan kunci/video dari policy segar (seq terbaru, belum lewat ttl).
+    const seq = db.policySeq || 0, issuedAt = now(), ttlMs = 30000;
+    pol.seq = seq; pol.issuedAt = issuedAt; pol.ttlMs = ttlMs;
+    return json(res, 200, { ok: true, policy: pol, seq, issuedAt, ttlMs });
   }
   if (p === '/api/scare-video' && req.method === 'GET') {
     // Server meneruskan video dari Telegram ke HP anak (token bot TIDAK dibagikan ke aplikasi).
@@ -1001,9 +1018,25 @@ const server = http.createServer(async (req, res) => {
   }
   if (p === '/api/commands' && req.method === 'GET') {
     const did = url.searchParams.get('deviceId');
-    const pending = db.commands.filter(c => !c.delivered && (c.deviceId === '*' || c.deviceId === did));
-    pending.forEach(c => { c.delivered = true; }); saveDb();
+    // v35: perintah kedaluwarsa tidak dikirim (ditandai selesai agar tidak menumpuk).
+    const pending = [];
+    for (const c of db.commands) {
+      if (c.delivered || !(c.deviceId === '*' || c.deviceId === did)) continue;
+      if (c.exp && c.exp < now()) { c.delivered = true; continue; }
+      c.delivered = true; pending.push(c);
+    }
+    saveDb();
     return json(res, 200, { ok: true, commands: pending });
+  }
+  // v35: aplikasi melaporkan hasil penerapan perintah (ACK) — bot/orang tua bisa membedakan "terkirim" vs "diterapkan".
+  if (p === '/api/command-ack' && req.method === 'POST') {
+    const b = await readBody(req);
+    if (b.deviceId) {
+      db.lastAck = db.lastAck || {};
+      db.lastAck[b.deviceId] = { cmdId: b.cmdId || '', type: b.type || '', result: b.result || '', appliedState: b.appliedState || null, seq: b.seq || 0, at: now() };
+      saveDb();
+    }
+    return json(res, 200, { ok: true });
   }
   return json(res, 404, { ok: false, error: 'not found' });
 });
