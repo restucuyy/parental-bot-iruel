@@ -158,11 +158,10 @@ function ftTarget(fitur) { const t = (db.featureTargets || {})[fitur]; return t 
 function ftTargetName(fitur) { const t = ftTarget(fitur); return t === '*' ? 'Semua HP' : ((db.devices[t] || {}).name || 'Semua HP'); }
 function polisiRichHtml() {
   return '<p><b>VIDEO POLISI</b></p>'
-    + '<blockquote>Video peringatan yang tampil full-screen di HP anak dan terkunci di sana sampai kamu buka lagi. Pasang videonya, lalu mulai dari sini.</blockquote>'
+    + '<blockquote>Video peringatan yang tampil full-screen di HP anak dan terkunci di sana sampai kamu buka lagi. Videonya sudah paten \u2014 video kiriman kamu.</blockquote>'
     + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr>'
-    + '<tr><td>Video</td><td>' + (db.scareVideo ? 'Siap \u2014 ' + esc(db.scareVideo.fileName || 'video') : 'Belum dipasang (video bawaan aplikasi tetap dipakai)') + '</td></tr>'
+    + '<tr><td>Video</td><td>' + (db.scareVideo ? 'PATEN \u2014 ' + esc(db.scareVideo.fileName || 'video') + ' (video kiriman kamu, tidak bisa diganti / dihapus)' : 'PATEN \u2014 video bawaan aplikasi (video kiriman kamu, tertanam di aplikasi)') + '</td></tr>'
     + '<tr><td>Status</td><td>' + (db.policy.scareActive ? 'Sedang tampil (semua HP)' : 'Tidak aktif') + '</td></tr></table>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="pset">' + padLabel('+ VIDEO', 21) + '</tg-button><tg-button type="callback_data" style="danger" data="phapus">' + padLabel('- VIDEO', 21) + '</tg-button></tg-button-row>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="pstart">' + padLabel('START VIDEO', 44) + '</tg-button></tg-button-row>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
 }
@@ -199,6 +198,17 @@ function deviceRowsHtml() {
   const ids = Object.keys(db.devices);
   if (!ids.length) return '<tr><td colspan="2">Belum ada HP anak yang tertaut</td></tr>';
   return ids.map(id => { const d = db.devices[id]; return '<tr><td>' + esc(d.name) + '</td><td>' + (deviceOnline(d) ? 'Online' : 'Offline') + (d.battery != null ? ' \u00b7 Baterai ' + d.battery + '%' : '') + '</td></tr>'; }).join('');
+}
+function tautRichHtml() {
+  const ids = Object.keys(db.devices);
+  const d = ids.length ? db.devices[ids[0]] : null;
+  return '<p><b>TAUT HP</b></p>'
+    + '<blockquote>Hubungkan aplikasi Parental Kids di HP anak ke bot ini. Aplikasi versi baru menautkan diri sendiri secara online begitu dibuka \u2014 cukup pastikan kode pairing di aplikasi sama dengan di bawah ini.</blockquote>'
+    + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr>'
+    + '<tr><td>Status</td><td>' + (d ? (deviceOnline(d) ? 'Tertaut & online \u2014 ' + esc(d.name) : 'Tertaut, sedang offline \u2014 ' + esc(d.name)) : 'Belum ada HP yang tertaut') + '</td></tr>'
+    + '<tr><td>Kode pairing</td><td>' + CHILD_CODE + '</td></tr>'
+    + '<tr><td>HP tertaut</td><td>' + ids.length + '</td></tr></table>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
 }
 function listDeviceRichHtml() {
   return '<p><b>LIST DEVICE</b></p>'
@@ -475,14 +485,15 @@ async function handleCommand(msg) {
   // yang diputar full-screen di HP anak setiap kali aplikasi dibatasi/dikunci.
   const vid = msg.video || (msg.document && /^video\//.test(msg.document.mime_type || '') ? msg.document : null);
   if (vid && vid.file_id) {
+    if (db.scareVideo) return send('🎬 Video polisi sudah *PATEN* (video yang kamu kirim). Sesuai perintahmu, video tidak bisa diganti atau dihapus.');
     db.scareVideo = { fileId: vid.file_id, fileName: vid.file_name || 'video-peringatan.mp4', setAt: now() };
     saveDb();
-    return send('🎬 Video peringatan *tersimpan*. Mulai sekarang, setiap anak membuka aplikasi yang diblokir / melewati batas waktu / HP dikunci, video ini yang muncul full-screen di HP anak.\n\nGanti video: kirim video baru saja ke sini.\nHapus: /hapusvideo');
+    return send('🎬 Video peringatan *tersimpan sebagai video paten*. Video ini yang muncul full-screen di HP anak setiap kali dibatasi/dikunci, dan tidak bisa diganti atau dihapus.');
   }
   switch (cmd) {
     case '/taut': {
       const id = firstDeviceId(); const d = id ? db.devices[id] : null;
-      return send('🔗 *TAUT HP ANAK*\nStatus: ' + (d ? (deviceOnline(d) ? '🟢 Tertaut & online — ' + d.name : 'Tertaut, sedang offline — ' + d.name) : 'Belum ada HP yang tertaut') + '\n\nCara menautkan / menautkan ulang:\n1. Buka aplikasi *Parental Kids* di HP anak\n2. Alamat server: alamat server Pterodactyl ini (lihat menu Network di panel, format `http://domain:port`)\n3. Kode pairing: `' + CHILD_CODE + '`\n4. Tekan *Simpan + Hubungkan*, aktifkan semua izin, lalu *Mulai Pemantauan*\n\nSatu kode ini bisa dipakai di *banyak HP anak sekaligus*. Beri nama berbeda di tiap HP, semuanya muncul di daftar. Tujuan tiap perintah dipilih sesudah menekan tombol fiturnya.');
+      return sendRich(chatId, tautRichHtml(), 'Menu TAUT HP.');
     }
     case '/matikan':
       // Urutan wajib dari user: SEBELUM MATI, video polisi tampil dulu (±20 detik), baru layar mati.
@@ -543,11 +554,11 @@ async function handleCommand(msg) {
       return send('Fitur tidak dikenal.');
     }
     case '/pset':
-      return send('\🎬 *+ VIDEO \u2014 PASANG VIDEO POLISI*\nVideo saat ini: ' + (db.scareVideo ? (db.scareVideo.fileName || 'video') + ' (diatur ' + new Date(db.scareVideo.setAt).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) + ')' : 'belum ada dari bot \u2014 video bawaan aplikasi yang dipakai') + '\n\nCara memasang / mengganti: *kirim saja video barunya ke chat ini.* Video itu otomatis tersimpan dan langsung dipakai.');
+      return send('\uD83C\uDFAC *VIDEO POLISI SUDAH PATEN*\nVideo saat ini: ' + (db.scareVideo ? (db.scareVideo.fileName || 'video') : 'video bawaan aplikasi (kiriman kamu)') + '\nVideo ini tidak bisa diganti atau dihapus, sesuai perintahmu.');
     case '/phapus': {
-      if (!db.scareVideo) return send('\🎬 Belum ada video dari bot yang bisa dihapus. Yang tampil di HP anak saat ini adalah video bawaan aplikasi.');
-      db.scareVideo = null; saveDb();
-      return send('\🎬 *Video polisi dari bot dihapus.*\nMulai sekarang HP anak memakai video bawaan aplikasi lagi. Kirim video baru ke chat ini kapan pun untuk memasang ulang.');
+      return send('\uD83C\uDFAC Video polisi sudah *PATEN* \u2014 tidak bisa dihapus, sesuai perintahmu.');
+
+
     }
     case '/ppilih':
       return sendRich(chatId, pickTargetRichHtml('polisi', 'ptarget'), 'Pilih device tujuan VIDEO POLISI.');
@@ -582,7 +593,8 @@ async function handleCommand(msg) {
       const txt = '\🚨 VIDEO POLISI DITAMPILKAN. Dalam \u00b110 detik layar HP anak berubah jadi video itu dan terkunci di sana, Tekan button dibawah untuk buka';
       const html = '<p><b>VIDEO POLISI</b></p><blockquote>' + txt + '</blockquote>'
         + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr><tr><td>Target</td><td>' + esc(tname) + '</td></tr></table>'
-        + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="pbuka_' + (t === '*' ? 'all' : t) + '">' + padLabel('BUKA', 44) + '</tg-button></tg-button-row>';
+        + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="pbuka_' + (t === '*' ? 'all' : t) + '">' + padLabel('BUKA', 44) + '</tg-button></tg-button-row>'
+        + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="polisi">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
       return sendRich(chatId, html, txt);
     }
     case '/pbuka': {
@@ -736,12 +748,11 @@ async function handleCommand(msg) {
       return send('🧒 *Preset anak kecil (±7 tahun) diterapkan:*\n• Batas main total: *60 menit/hari* — ubah: `/batas 90`\n• Terblokir: TikTok, Instagram, Facebook, YouTube biasa — buka: `/izin <paket>`\n• Saran: izinkan *YouTube Kids* (`com.google.android.apps.youtube.kids`) sebagai pengganti YouTube\n• Kunci otomatis jam tidur: *20:00–05:30* — hapus: `/hapusjadwal`\n\nSemua ini hanya awalan, atur lagi sesuai kebiasaan anakmu.');
     }
     case '/videopolisi':
-      return send(db.scareVideo
-        ? '🎬 Video peringatan saat ini: *' + (db.scareVideo.fileName || 'video') + '* (diatur ' + new Date(db.scareVideo.setAt).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) + ').\nKirim video baru ke sini untuk menggantinya, atau /hapusvideo untuk mematikan.'
-        : '🎬 Belum ada video peringatan.\n*Kirim saja sebuah video ke chat ini* (misalnya video polisi yang menyuruh berhenti main HP) — video itu otomatis jadi video yang muncul full-screen di HP anak setiap kali aplikasi dibatasi/dikunci.');
+      return send('\uD83C\uDFAC Video polisi saat ini: *' + (db.scareVideo ? (db.scareVideo.fileName || 'video') : 'video bawaan aplikasi') + '* \u2014 PATEN, tidak bisa diganti atau dihapus.');
+
+
     case '/hapusvideo':
-      db.scareVideo = null; saveDb();
-      return send('🎬 Video peringatan dimatikan. Layar blokir kembali ke tampilan teks biasa.');
+      return send('🎬 Video polisi sudah *PATEN* \u2014 tidak bisa dihapus/dimatikan, sesuai perintahmu.');
     case '/kode':
       return send('🔑 *Kode pairing aplikasi anak:* `' + CHILD_CODE + '`\nMasukkan kode ini + alamat server ini satu kali di aplikasi HP anak.');
     default:
