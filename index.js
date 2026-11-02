@@ -389,7 +389,7 @@ function jadwalText() {
 function statusRichHtml() {
   let html = '<p><b>STATUS HP</b></p>' + toRichHtml(statusText());
   html += '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="kunci">' + padLabel('KUNCI HP', 21) + '</tg-button><tg-button type="callback_data" style="success" data="buka">' + padLabel('BUKA KUNCI', 21) + '</tg-button></tg-button-row>';
-  html += '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="lokasi">' + padLabel('MINTA LOKASI', 21) + '</tg-button><tg-button type="callback_data" style="danger" data="bunyi">' + padLabel('BUNYIKAN HP', 21) + '</tg-button></tg-button-row>';
+  html += '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="lokasi">' + padLabel('MINTA LOKASI', 21) + '</tg-button>' + (bunyiActive() ? '<tg-button type="callback_data" style="success" data="bunyimati">' + padLabel('MATIKAN BUNYI', 21) + '</tg-button>' : '<tg-button type="callback_data" style="danger" data="bunyi">' + padLabel('BUNYIKAN HP', 21) + '</tg-button>') + '</tg-button-row>';
   html += '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
   return html;
 }
@@ -451,7 +451,7 @@ function jadwalRichHtml() {
 // BUKA TOTAL (aturan user): sekali BUKA, semua yang aktif hilang bersamaan:
 // kunci manual, video polisi, jeda, dan timer sesi — global maupun per-device.
 function clearAllLocks() {
-  db.polisiOn = {};
+  db.polisiOn = {}; db.bunyiOnAt = 0;
   db.policy.locked = false; db.policy.scareActive = false; db.policy.pauseUntil = 0; db.policy.sessionUntil = 0;
   for (const id of Object.keys(db.perDevice || {})) { const d = db.perDevice[id]; if (d) { delete d.locked; delete d.scareActive; delete d.pauseUntil; delete d.sessionUntil; } }
   queueCommand('unscare', null, '*'); queueCommand('unlock', null, '*');
@@ -477,6 +477,7 @@ function polisiStart(target) {
   saveDb();
 }
 function polisiActive() { return !!(db.polisiOn && Object.keys(db.polisiOn).length); }
+function bunyiActive() { return !!(db.bunyiOnAt && now() - db.bunyiOnAt < 40000); }
 
 async function handleCommand(msg) {
   const chatId = msg.chat.id; const fromId = msg.from && msg.from.id;
@@ -522,8 +523,15 @@ async function handleCommand(msg) {
     case '/bunyi': {
       const idsB = Object.keys(db.devices);
       if (!idsB.length) return send('Belum ada HP anak yang tertaut.');
-      queueCommand('bunyi', null, idsB.length === 1 ? idsB[0] : '*'); saveDb();
+      queueCommand('bunyi', null, idsB.length === 1 ? idsB[0] : '*'); db.bunyiOnAt = now(); saveDb();
       return send('\uD83D\uDD14 *BUNYIKAN HP dikirim* \u2014 HP anak berbunyi keras \u00b130 detik walau mode senyap. BUKA dari bot menghentikan bunyinya.');
+    }
+    case '/bunyimati': {
+      const idsM = Object.keys(db.devices);
+      db.bunyiOnAt = 0;
+      if (idsM.length) queueCommand('stopbunyi', null, idsM.length === 1 ? idsM[0] : '*');
+      saveDb();
+      return sendRich(chatId, statusRichHtml(), 'Bunyi HP anak dimatikan.');
     }
     case '/tautgen': {
       const kode = newPairCode();
@@ -812,7 +820,7 @@ async function handleCallback(cb) {
   await tg('answerCallbackQuery', { callback_query_id: cb.id }).catch(() => {});
   if (!isParent(fromId)) return;
   const fake = { chat: { id: chatId }, from: cb.from, text: '' };
-  const map = { menu: '/start', laporan: '/laporan', status: '/status', kunci: '/kunci', buka: '/buka', daftarblokir: '/daftarblokir', info_batas: '/batas', info_jadwal: '/jadwal', kode: '/kode', polisi: '/polisi', polisi_off: '/polisimati', taut: '/taut', tautgen: '/tautgen', lokasi: '/lokasi', bunyi: '/bunyi', matikan: '/matikan', timer: '/timer', jeda: '/jeda', timer_30: '/timer30', timer_60: '/timer60', timer_90: '/timer90', timer_120: '/timer120', timer_0: '/timer0', jeda_15: '/jeda15', jeda_30: '/jeda30', jeda_60: '/jeda60', jeda_off: '/jedabatal' };
+  const map = { menu: '/start', laporan: '/laporan', status: '/status', kunci: '/kunci', buka: '/buka', daftarblokir: '/daftarblokir', info_batas: '/batas', info_jadwal: '/jadwal', kode: '/kode', polisi: '/polisi', polisi_off: '/polisimati', taut: '/taut', tautgen: '/tautgen', lokasi: '/lokasi', bunyi: '/bunyi', bunyimati: '/bunyimati', matikan: '/matikan', timer: '/timer', jeda: '/jeda', timer_30: '/timer30', timer_60: '/timer60', timer_90: '/timer90', timer_120: '/timer120', timer_0: '/timer0', jeda_15: '/jeda15', jeda_30: '/jeda30', jeda_60: '/jeda60', jeda_off: '/jedabatal' };
   if (cb.data === 'device') { fake.text = '/device'; return handleCommand(fake); }
   if (cb.data === 'dev_add') { fake.text = '/tambahdevice'; return handleCommand(fake); }
   if (cb.data === 'dev_del') { fake.text = '/pilihhapus'; return handleCommand(fake); }
@@ -920,6 +928,8 @@ const server = http.createServer(async (req, res) => {
       pc.usedBy = id; pc.usedAt = now();
     }
     db.devices[id] = Object.assign({}, db.devices[id], { name: b.deviceName || 'HP Anak', model: b.model || '', android: b.androidVersion || '', lastSeen: now() });
+    if (db.perDevice) delete db.perDevice[id]; // penautan baru = mulai bersih (hapus kunci khusus HP ini)
+    if (db.commands) delete db.commands[id];
     db.deviceTokens = db.deviceTokens || {};
     for (const t of Object.keys(db.deviceTokens)) if (db.deviceTokens[t] === id) delete db.deviceTokens[t];
     const deviceToken = crypto.randomBytes(18).toString('hex');
