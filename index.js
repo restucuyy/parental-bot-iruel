@@ -417,6 +417,25 @@ function jadwalRichHtml() {
     + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
 }
 
+
+function setTargetLocked(target, val) {
+  db.perDevice = db.perDevice || {};
+  if (target === '*' || target === 'all') {
+    db.policy.locked = val;
+    if (!val) for (const id of Object.keys(db.perDevice)) { if (db.perDevice[id]) delete db.perDevice[id].locked; }
+  } else if (val) {
+    db.perDevice[target] = db.perDevice[target] || {};
+    db.perDevice[target].locked = true;
+  } else if (db.perDevice[target]) delete db.perDevice[target].locked;
+}
+function polisiStart(target) {
+  // VIDEO POLISI versi remot penuh: video tampil dulu, sesudah itu HP mati & terkunci
+  // sampai orang tua menekan BUKA dari bot.
+  setTargetLocked(target, true);
+  queueCommand('matikan', null, target === 'all' ? '*' : target);
+  saveDb();
+}
+
 async function handleCommand(msg) {
   const chatId = msg.chat.id; const fromId = msg.from && msg.from.id;
   const text = (msg.text || '').trim();
@@ -545,8 +564,7 @@ async function handleCommand(msg) {
       const t = arg === 'all' || !arg ? '*' : arg;
       const tname = t === '*' ? 'Semua HP' : ((db.devices[t] || {}).name || t);
       if (t !== '*' && !db.devices[t]) return send('HP tujuan tidak ditemukan.');
-      if (t === '*') db.policy.scareActive = true;
-      queueCommand('scare', null, t); saveDb();
+      polisiStart(t);
       const txt = '\🚨 VIDEO POLISI DITAMPILKAN. Dalam \u00b110 detik layar HP anak berubah jadi video itu dan terkunci di sana, Tekan button dibawah untuk buka';
       const html = '<p><b>VIDEO POLISI</b></p><blockquote>' + txt + '</blockquote>'
         + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr><tr><td>Target</td><td>' + esc(tname) + '</td></tr></table>'
@@ -557,7 +575,8 @@ async function handleCommand(msg) {
       const t = arg === 'all' || !arg ? '*' : arg;
       const tname = t === '*' ? 'Semua HP' : ((db.devices[t] || {}).name || t);
       if (t === '*') { db.policy.scareActive = false; db.policy.locked = false; db.policy.sessionUntil = 0; }
-      else { db.perDevice = db.perDevice || {}; if (db.perDevice[t]) delete db.perDevice[t].sessionUntil; }
+      if (t === '*') { for (const id of Object.keys(db.perDevice || {})) { if (db.perDevice[id]) delete db.perDevice[id].locked; } }
+      else { db.perDevice = db.perDevice || {}; if (db.perDevice[t]) { delete db.perDevice[t].sessionUntil; delete db.perDevice[t].locked; } }
       queueCommand('unscare', null, t); queueCommand('unlock', null, t); saveDb();
       return send('\🔓 *DIBUKA*\nTarget: ' + tname + '\nStatus: Video polisi berhenti, kunci dibuka');
     }
@@ -578,9 +597,8 @@ async function handleCommand(msg) {
       if (target !== 'all' && !db.devices[target]) return send('HP tujuan tidak ditemukan.');
       if (fitur === 'polisi') {
         if (!db.scareVideo) return send('🎬 Video polisinya belum ada. *Kirim dulu videonya ke chat ini*, setelah itu tombol ini langsung bisa dipakai.');
-        if (target === 'all') db.policy.scareActive = true;
-        queueCommand('scare', null, devId); saveDb();
-        return send('🚨 *VIDEO POLISI dikirim*\nTarget: ' + tname + '\nStatus: Tampil di layar dalam ±10 detik, terkunci sampai kamu matikan');
+        polisiStart(target);
+        return send('🚨 *VIDEO POLISI dikirim*\nTarget: ' + tname + '\nStatus: Video tampil dalam ±10 detik, sesudah itu HP mati & terkunci sampai kamu tekan BUKA');
       }
       if (fitur === 'polisi_off') {
         if (target === 'all') db.policy.scareActive = false;
@@ -598,8 +616,8 @@ async function handleCommand(msg) {
         return send('🔒 *KUNCI dikirim*\nTarget: ' + tname);
       }
       if (fitur === 'buka') {
-        if (target === 'all') { db.policy.locked = false; db.policy.scareActive = false; db.policy.pauseUntil = 0; db.policy.sessionUntil = 0; for (const id of Object.keys(db.perDevice || {})) { if (db.perDevice[id]) delete db.perDevice[id].sessionUntil; } }
-        else { db.perDevice = db.perDevice || {}; if (db.perDevice[target]) delete db.perDevice[target].sessionUntil; }
+        if (target === 'all') { db.policy.locked = false; db.policy.scareActive = false; db.policy.pauseUntil = 0; db.policy.sessionUntil = 0; for (const id of Object.keys(db.perDevice || {})) { if (db.perDevice[id]) { delete db.perDevice[id].sessionUntil; delete db.perDevice[id].locked; } } }
+        else { db.perDevice = db.perDevice || {}; if (db.perDevice[target]) { delete db.perDevice[target].sessionUntil; delete db.perDevice[target].locked; } }
         queueCommand('unlock', null, devId); saveDb();
         return send('🔓 *BUKA KUNCI dikirim*\nTarget: ' + tname);
       }
@@ -650,11 +668,11 @@ async function handleCommand(msg) {
       db.policy.locked = true; queueCommand('lock'); saveDb();
       return send('🔒 Perintah *KUNCI* dikirim. HP anak akan terkunci dalam ±1 menit (atau langsung bila sedang online).');
     case '/buka':
-      db.policy.locked = false; db.policy.scareActive = false; db.policy.pauseUntil = 0; db.policy.sessionUntil = 0; for (const id of Object.keys(db.perDevice || {})) { if (db.perDevice[id]) delete db.perDevice[id].sessionUntil; } queueCommand('unlock'); saveDb();
+      db.policy.locked = false; db.policy.scareActive = false; db.policy.pauseUntil = 0; db.policy.sessionUntil = 0; for (const id of Object.keys(db.perDevice || {})) { if (db.perDevice[id]) { delete db.perDevice[id].sessionUntil; delete db.perDevice[id].locked; } } queueCommand('unlock'); saveDb();
       return send('🔓 Kunci dibuka. HP anak bisa dipakai lagi.');
     case '/polisi': {
       if (!db.scareVideo) return send('🎬 Video polisinya belum ada. *Kirim dulu videonya ke chat ini*, setelah itu tombol ini langsung bisa dipakai.');
-      db.policy.scareActive = true; queueCommand('scare'); saveDb();
+      polisiStart('*');
       return send('🚨 *VIDEO POLISI DITAMPILKAN.* Dalam ±10 detik layar HP anak berubah jadi video itu dan terkunci di sana, sampai kamu tekan tombol *Matikan Video Polisi* (atau /buka).');
     }
     case '/polisimati':
@@ -822,6 +840,8 @@ const server = http.createServer(async (req, res) => {
       if (Object.prototype.hasOwnProperty.call(pd, 'dailyLimitMinutes')) pol.dailyLimitMinutes = pd.dailyLimitMinutes;
       if (Object.prototype.hasOwnProperty.call(pd, 'pauseUntil')) pol.pauseUntil = pd.pauseUntil;
       if (Object.prototype.hasOwnProperty.call(pd, 'sessionUntil')) pol.sessionUntil = pd.sessionUntil;
+      if (Object.prototype.hasOwnProperty.call(pd, 'locked')) pol.locked = pd.locked;
+      if (Object.prototype.hasOwnProperty.call(pd, 'scareActive')) pol.scareActive = pd.scareActive;
     }
     return json(res, 200, { ok: true, policy: pol });
   }
