@@ -90,11 +90,22 @@ const MENU = {
 function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 // Kapsul Rich lebarnya mengikuti teks — samakan panjang label sepasang dengan
 // spasi non-breaking di kiri/kanan agar tombol tampil simetris (pilihan user).
+function charW(ch) {
+  if (ch === '\u00A0' || ch === ' ') return 0.5;
+  if ('MW@#%'.includes(ch)) return 1.35;
+  if ('Iil1|!'.includes(ch)) return 0.45;
+  if (ch >= 'A' && ch <= 'Z') return 1.0;
+  if (ch >= 'a' && ch <= 'z') return 0.82;
+  if (ch >= '0' && ch <= '9') return 0.9;
+  const cp = ch.codePointAt(0);
+  if (cp > 0xFFFF || cp > 0x2000) return 1.6;
+  return 0.8;
+}
+function textW(t) { let w = 0; for (const ch of String(t)) w += charW(ch); return w; }
 function padLabel(text, target) {
   let t = String(text);
-  let len = [...t].length;
   let side = true;
-  while (len < target) { t = side ? '\u00A0' + t : t + '\u00A0'; side = !side; len++; }
+  while (textW(t) < target) { t = side ? '\u00A0' + t : t + '\u00A0'; side = !side; }
   return t;
 }
 function targetName() { return (!db.targetDevice || db.targetDevice === '*') ? 'Semua HP' : ((db.devices[db.targetDevice] || {}).name || 'Semua HP'); }
