@@ -170,7 +170,8 @@ function fiturRichHtml(fitur) {
     + '<blockquote>' + info + '</blockquote>'
     + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr>'
     + '<tr><td>Device Tujuan</td><td>' + esc(ftTargetName(fitur)) + '</td></tr></table>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="fpilih_' + fitur + '">' + padLabel('PILIH DEVICE', 17) + '</tg-button><tg-button type="callback_data" style="danger" data="fstart_' + fitur + '">' + padLabel(label + ' SEKARANG', 17) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="fstart_' + fitur + '">' + padLabel(label + ' SEKARANG', 28) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="fpilih_' + fitur + '">' + padLabel('PILIH DEVICE', 28) + '</tg-button></tg-button-row>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
 }
 function pickTargetRichHtml(fitur, prefix) {
