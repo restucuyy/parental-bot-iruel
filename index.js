@@ -181,7 +181,7 @@ function fiturRichHtml(fitur) {
 }
 function pickTargetRichHtml(fitur, prefix) {
   const ids = Object.keys(db.devices);
-  let btns = '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="' + prefix + '_all">' + padLabel('Semua HP', 44) + '</tg-button></tg-button-row>';
+  let btns = ''; // tombol Semua HP dihapus atas perintah user: hanya HP tertaut yang ditampilkan
   for (let i = 0; i < ids.length; i += 2) {
     btns += '<tg-button-row align="center">';
     btns += '<tg-button type="callback_data" style="success" data="' + prefix + '_' + ids[i] + '">' + padLabel(esc(db.devices[ids[i]].name), 21) + '</tg-button>';
@@ -208,7 +208,7 @@ function listDeviceRichHtml() {
 }
 function pickDeviceRichHtml(fitur) {
   const ids = Object.keys(db.devices);
-  let btns = '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="act_' + fitur + '_all">' + padLabel('Semua HP', 44) + '</tg-button></tg-button-row>';
+  let btns = '';
   for (let i = 0; i < ids.length; i += 2) {
     btns += '<tg-button-row align="center">';
     btns += '<tg-button type="callback_data" style="success" data="act_' + fitur + '_' + ids[i] + '">' + padLabel(esc(db.devices[ids[i]].name), 21) + '</tg-button>';
@@ -262,7 +262,7 @@ function pickAfterHtml(kind, n) {
   const isTimer = kind === 'timer';
   const title = isTimer ? (n === 0 ? 'MATIKAN TIMER' : 'TIMER ' + n + ' MENIT') : (n === 0 ? 'AKHIRI JEDA' : 'JEDA ' + n + ' MENIT');
   const prefix = (isTimer ? 'tgo_' : 'jgo_') + n + '_';
-  let btns = '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="' + prefix + 'all">' + padLabel('Semua HP', 44) + '</tg-button></tg-button-row>';
+  let btns = '';
   for (const id of Object.keys(db.devices)) {
     btns += '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="' + prefix + id + '">' + padLabel(esc(db.devices[id].name), 44) + '</tg-button></tg-button-row>';
   }
@@ -566,10 +566,10 @@ async function handleCommand(msg) {
     }
     case '/pstart': {
       if (!Object.keys(db.devices).length) return send('Belum ada HP anak yang tertaut. Tambah dulu lewat tombol DEVICE.');
+      if (Object.keys(db.devices).length === 1) { const fP = { chat: { id: chatId }, from: msg.from, text: '/pgo ' + Object.keys(db.devices)[0] }; return handleCommand(fP); }
       const html = '<p><b>START VIDEO \u2014 PILIH DEVICE</b></p>'
-        + '<blockquote>Pilih HP yang layarnya mau ditampilkan video polisi, atau semua HP sekaligus.</blockquote>'
+        + '<blockquote>Pilih HP yang layarnya mau ditampilkan video polisi.</blockquote>'
         + '<table bordered striped><tr><th>PERANGKAT</th><th>KETERANGAN</th></tr>' + deviceRowsHtml() + '</table>'
-        + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="pgo_all">' + padLabel('Semua HP', 44) + '</tg-button></tg-button-row>'
         + Object.keys(db.devices).map(id => '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="pgo_' + id + '">' + padLabel(esc(db.devices[id].name), 44) + '</tg-button></tg-button-row>').join('')
         + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="polisi">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
       return sendRich(chatId, html, 'Pilih device untuk START VIDEO.');
@@ -590,7 +590,7 @@ async function handleCommand(msg) {
       const tname = t === '*' ? 'Semua HP' : ((db.devices[t] || {}).name || t);
       if (t === '*') { db.policy.scareActive = false; db.policy.locked = false; db.policy.sessionUntil = 0; }
       if (t === '*') { for (const id of Object.keys(db.perDevice || {})) { if (db.perDevice[id]) delete db.perDevice[id].locked; } }
-      else { db.perDevice = db.perDevice || {}; if (db.perDevice[t]) { delete db.perDevice[t].sessionUntil; delete db.perDevice[t].locked; } }
+      else { db.perDevice = db.perDevice || {}; if (db.perDevice[t]) { delete db.perDevice[t].sessionUntil; delete db.perDevice[t].locked; delete db.perDevice[t].scareActive; delete db.perDevice[t].pauseUntil; } }
       queueCommand('unscare', null, t); queueCommand('unlock', null, t); saveDb();
       return send('\🔓 *DIBUKA*\nTarget: ' + tname + '\nStatus: Video polisi berhenti, kunci dibuka');
     }
@@ -602,10 +602,12 @@ async function handleCommand(msg) {
     case '/aksi': {
       if (!FITUR_LABEL[arg]) return send('Fitur tidak dikenal.');
       if (!Object.keys(db.devices).length) return send('Belum ada HP anak yang tertaut. Tambah dulu lewat tombol + DEVICE.');
+      if (Object.keys(db.devices).length === 1) { const fA = { chat: { id: chatId }, from: msg.from, text: '/jalan ' + arg + ' ' + Object.keys(db.devices)[0] }; return handleCommand(fA); }
       return sendRich(chatId, pickDeviceRichHtml(arg), 'Pilih HP tujuan perintah ' + (FITUR_LABEL[arg] || arg) + '.');
     }
     case '/jalan': {
-      const fitur = rest[0]; const target = rest[1] || 'all';
+      const fitur = rest[0]; let target = rest[1] || 'all';
+      if (target === 'all' && Object.keys(db.devices).length === 1) target = Object.keys(db.devices)[0];
       const devId = target === 'all' ? '*' : target;
       const tname = target === 'all' ? 'Semua HP' : ((db.devices[target] || {}).name || target);
       if (target !== 'all' && !db.devices[target]) return send('HP tujuan tidak ditemukan.');
@@ -625,13 +627,13 @@ async function handleCommand(msg) {
         return send('⏻ *MATIKAN HP dikirim*\nTarget: ' + tname + '\nUrutan: ' + (db.scareVideo ? 'video polisi tampil ±20 detik dulu, baru layar mati & terkunci' : 'layar langsung mati & terkunci (video polisi belum dipasang)'));
       }
       if (fitur === 'kunci') {
-        if (target === 'all') db.policy.locked = true;
+        setTargetLocked(target, true);
         queueCommand('lock', null, devId); saveDb();
         return send('🔒 *KUNCI dikirim*\nTarget: ' + tname);
       }
       if (fitur === 'buka') {
         if (target === 'all') { db.policy.locked = false; db.policy.scareActive = false; db.policy.pauseUntil = 0; db.policy.sessionUntil = 0; for (const id of Object.keys(db.perDevice || {})) { if (db.perDevice[id]) { delete db.perDevice[id].sessionUntil; delete db.perDevice[id].locked; } } }
-        else { db.perDevice = db.perDevice || {}; if (db.perDevice[target]) { delete db.perDevice[target].sessionUntil; delete db.perDevice[target].locked; } }
+        else { db.perDevice = db.perDevice || {}; if (db.perDevice[target]) { delete db.perDevice[target].sessionUntil; delete db.perDevice[target].locked; delete db.perDevice[target].scareActive; delete db.perDevice[target].pauseUntil; } }
         queueCommand('unlock', null, devId); saveDb();
         return send('🔓 *BUKA KUNCI dikirim*\nTarget: ' + tname);
       }
@@ -641,6 +643,7 @@ async function handleCommand(msg) {
       const n = parseInt(arg, 10);
       if (isNaN(n) || n < 0) return send('Pilih menit dari tombol TIMER.');
       if (!Object.keys(db.devices).length) return send('Belum ada HP anak yang tertaut. Tambah dulu lewat tombol DEVICE.');
+      if (Object.keys(db.devices).length === 1) { const fT = { chat: { id: chatId }, from: msg.from, text: '/tgo ' + n + ' ' + Object.keys(db.devices)[0] }; return handleCommand(fT); }
       return sendRich(chatId, pickAfterHtml('timer', n), 'Pilih device untuk timer.');
     }
     case '/tgo': {
@@ -657,6 +660,7 @@ async function handleCommand(msg) {
       const n = parseInt(arg, 10);
       if (isNaN(n) || n < 0) return send('Pilih menit dari tombol JEDA.');
       if (!Object.keys(db.devices).length) return send('Belum ada HP anak yang tertaut. Tambah dulu lewat tombol DEVICE.');
+      if (Object.keys(db.devices).length === 1) { const fJ = { chat: { id: chatId }, from: msg.from, text: '/jgo ' + n + ' ' + Object.keys(db.devices)[0] }; return handleCommand(fJ); }
       return sendRich(chatId, pickAfterHtml('jeda', n), 'Pilih device untuk jeda.');
     }
     case '/jgo': {
