@@ -203,11 +203,12 @@ function tautRichHtml() {
   const ids = Object.keys(db.devices);
   const d = ids.length ? db.devices[ids[0]] : null;
   return '<p><b>TAUT HP</b></p>'
-    + '<blockquote>Hubungkan aplikasi Parental Kids di HP anak ke bot ini. Aplikasi versi baru menautkan diri sendiri secara online begitu dibuka \u2014 cukup pastikan kode pairing di aplikasi sama dengan di bawah ini.</blockquote>'
+    + '<blockquote>Cara menautkan: tekan GENERATE KODE \u2014 muncul kode acak sekali pakai. Ketik kode itu di aplikasi HP anak, HP langsung tertaut dan kodenya hangus (tidak bisa dipakai lagi). Buat kode baru untuk HP berikutnya.</blockquote>'
     + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr>'
     + '<tr><td>Status</td><td>' + (d ? (deviceOnline(d) ? 'Tertaut & online \u2014 ' + esc(d.name) : 'Tertaut, sedang offline \u2014 ' + esc(d.name)) : 'Belum ada HP yang tertaut') + '</td></tr>'
-    + '<tr><td>Kode pairing</td><td>' + CHILD_CODE + '</td></tr>'
+    + '<tr><td>Kode sekali pakai</td><td>' + (activePairCode() ? '<b>' + activePairCode() + '</b> (berlaku 15 menit, hangus sesudah dipakai)' : 'belum dibuat \u2014 tekan GENERATE KODE') + '</td></tr>'
     + '<tr><td>HP tertaut</td><td>' + ids.length + '</td></tr></table>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="tautgen">' + padLabel('GENERATE KODE', 44) + '</tg-button></tg-button-row>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
 }
 function listDeviceRichHtml() {
@@ -495,6 +496,10 @@ async function handleCommand(msg) {
       const id = firstDeviceId(); const d = id ? db.devices[id] : null;
       return sendRich(chatId, tautRichHtml(), 'Menu TAUT HP.');
     }
+    case '/tautgen': {
+      const kode = newPairCode();
+      return sendRich(chatId, tautRichHtml(), 'Kode sekali pakai baru: ' + kode + ' \u2014 ketik di aplikasi HP anak (berlaku 15 menit, sekali pakai).');
+    }
     case '/matikan':
       // Urutan wajib dari user: SEBELUM MATI, video polisi tampil dulu (±20 detik), baru layar mati.
       db.policy.locked = true; db.policy.scareActive = true; queueCommand('matikan'); saveDb();
@@ -765,7 +770,7 @@ async function handleCallback(cb) {
   await tg('answerCallbackQuery', { callback_query_id: cb.id }).catch(() => {});
   if (!isParent(fromId)) return;
   const fake = { chat: { id: chatId }, from: cb.from, text: '' };
-  const map = { menu: '/start', laporan: '/laporan', status: '/status', kunci: '/kunci', buka: '/buka', daftarblokir: '/daftarblokir', info_batas: '/batas', info_jadwal: '/jadwal', kode: '/kode', polisi: '/polisi', polisi_off: '/polisimati', taut: '/taut', matikan: '/matikan', timer: '/timer', jeda: '/jeda', timer_30: '/timer30', timer_60: '/timer60', timer_90: '/timer90', timer_120: '/timer120', timer_0: '/timer0', jeda_15: '/jeda15', jeda_30: '/jeda30', jeda_60: '/jeda60', jeda_off: '/jedabatal' };
+  const map = { menu: '/start', laporan: '/laporan', status: '/status', kunci: '/kunci', buka: '/buka', daftarblokir: '/daftarblokir', info_batas: '/batas', info_jadwal: '/jadwal', kode: '/kode', polisi: '/polisi', polisi_off: '/polisimati', taut: '/taut', tautgen: '/tautgen', matikan: '/matikan', timer: '/timer', jeda: '/jeda', timer_30: '/timer30', timer_60: '/timer60', timer_90: '/timer90', timer_120: '/timer120', timer_0: '/timer0', jeda_15: '/jeda15', jeda_30: '/jeda30', jeda_60: '/jeda60', jeda_off: '/jedabatal' };
   if (cb.data === 'device') { fake.text = '/device'; return handleCommand(fake); }
   if (cb.data === 'dev_add') { fake.text = '/tambahdevice'; return handleCommand(fake); }
   if (cb.data === 'dev_del') { fake.text = '/pilihhapus'; return handleCommand(fake); }
@@ -835,19 +840,47 @@ function readBody(req) {
   });
 }
 function json(res, code, obj) { res.writeHead(code, { 'content-type': 'application/json' }); res.end(JSON.stringify(obj)); }
-function authed(req) { return (req.headers['x-child-code'] || '') === CHILD_CODE; }
+function authed(req) {
+  if ((req.headers['x-child-code'] || '') === CHILD_CODE) return true;
+  const tok = req.headers['x-device-token'] || '';
+  return !!(tok && (db.deviceTokens || {})[tok]);
+}
+function newPairCode() {
+  const abc = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  db.pairCodes = {};
+  let code = '';
+  for (let i = 0; i < 6; i++) code += abc[Math.floor(Math.random() * abc.length)];
+  db.pairCodes[code] = { createdAt: now(), usedBy: null };
+  saveDb();
+  return code;
+}
+function activePairCode() {
+  const pcs = db.pairCodes || {};
+  for (const c of Object.keys(pcs)) if (!pcs[c].usedBy && now() - pcs[c].createdAt < 15 * 60000) return c;
+  return null;
+}
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
   const p = url.pathname;
   if (p === '/health') return json(res, 200, { ok: true, devices: Object.keys(db.devices).length });
-  if (p.startsWith('/api/') && !authed(req)) return json(res, 401, { ok: false, error: 'kode pairing salah' });
+  if (p.startsWith('/api/') && p !== '/api/register' && !authed(req)) return json(res, 401, { ok: false, error: 'kode pairing salah' });
 
   if (p === '/api/register' && req.method === 'POST') {
     const b = await readBody(req);
     const id = b.deviceId || crypto.createHash('sha1').update((b.model || '') + (b.deviceName || '') + CHILD_CODE).digest('hex').slice(0, 12);
+    const code = req.headers['x-child-code'] || '';
+    if (code !== CHILD_CODE) {
+      const pc = (db.pairCodes || {})[code];
+      if (!pc || pc.usedBy || now() - pc.createdAt > 15 * 60000) return json(res, 401, { ok: false, error: 'kode sekali pakai tidak berlaku (sudah dipakai / kedaluwarsa) \u2014 generate kode baru di menu TAUT HP bot' });
+      pc.usedBy = id; pc.usedAt = now();
+    }
     db.devices[id] = Object.assign({}, db.devices[id], { name: b.deviceName || 'HP Anak', model: b.model || '', android: b.androidVersion || '', lastSeen: now() });
-    saveDb(); return json(res, 200, { ok: true, deviceId: id });
+    db.deviceTokens = db.deviceTokens || {};
+    for (const t of Object.keys(db.deviceTokens)) if (db.deviceTokens[t] === id) delete db.deviceTokens[t];
+    const deviceToken = crypto.randomBytes(18).toString('hex');
+    db.deviceTokens[deviceToken] = id;
+    saveDb(); return json(res, 200, { ok: true, deviceId: id, deviceToken });
   }
   if (p === '/api/heartbeat' && req.method === 'POST') {
     const b = await readBody(req); let d = db.devices[b.deviceId];
