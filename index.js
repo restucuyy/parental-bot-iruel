@@ -74,15 +74,15 @@ function fmtMin(m) { m = Math.round(m || 0); if (m < 60) return m + ' mnt'; retu
 // Tata letak mengikuti aturan user: 2 tombol sebaris; sisa tanpa pasangan = 1 baris full wide.
 const MENU = {
   inline_keyboard: [
-    [{ text: '🚨 VIDEO POLISI — TAMPILKAN SEKARANG', callback_data: 'polisi' }],
-    [{ text: 'TAUT HP', callback_data: 'taut' }, { text: 'MATIKAN HP', callback_data: 'matikan' }],
-    [{ text: 'TIMER PERANGKAT', callback_data: 'timer' }, { text: 'JEDA PERANGKAT', callback_data: 'jeda' }],
-    [{ text: '✅ Matikan Video Polisi', callback_data: 'polisi_off' }, { text: '📊 Laporan', callback_data: 'laporan' }],
-    [{ text: '📱 Status HP', callback_data: 'status' }, { text: '🔒 Kunci HP', callback_data: 'kunci' }],
-    [{ text: '🔓 Buka Kunci', callback_data: 'buka' }, { text: '🚫 Daftar Blokir', callback_data: 'daftarblokir' }],
-    [{ text: '⏱ Batas Waktu', callback_data: 'info_batas' }, { text: '🗓 Jadwal Kunci', callback_data: 'info_jadwal' }],
-    [{ text: '📱 DEVICE', callback_data: 'device' }],
-    [{ text: '🔑 Kode Pairing', callback_data: 'kode' }]
+    [{ text: '\📱 DEVICE', callback_data: 'device' }, { text: '\📊 Laporan', callback_data: 'laporan' }],
+    [{ text: 'TIMER PERANGKAT', callback_data: 'timer' }],
+    [{ text: 'JEDA PERANGKAT', callback_data: 'jeda' }],
+    [{ text: 'TAUT HP', callback_data: 'taut' }, { text: '\📱 Status HP', callback_data: 'status' }],
+    [{ text: '\🚨 VIDEO POLISI', callback_data: 'polisi' }],
+    [{ text: '\u2705 Matikan Video Polisi', callback_data: 'polisi_off' }, { text: '\🔒 Kunci HP', callback_data: 'kunci' }],
+    [{ text: '\🔓 Buka Kunci', callback_data: 'buka' }, { text: '\🚫 Daftar Blokir', callback_data: 'daftarblokir' }],
+    [{ text: '\u23f1 Batas Waktu', callback_data: 'info_batas' }, { text: '\🗓 Jadwal Kunci', callback_data: 'info_jadwal' }],
+    [{ text: '\🔑 Kode Pairing', callback_data: 'kode' }]
   ]
 };
 
@@ -116,13 +116,13 @@ function startRichHtml() {
     + '<tr><td>Video Polisi</td><td>' + (db.scareVideo ? 'Siap dipakai' : 'Belum dipasang (kirim video ke bot ini)') + '</td></tr>'
     + '<tr><td>Layar Terkunci</td><td>' + (p.locked ? 'Ya' : 'Tidak') + '</td></tr>'
     + '</table>'
-    // Aturan tata letak user: tombol berpasangan 2 sebaris rapi;
-    // yang tidak punya pasangan tampil 1 baris full wide.
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="polisi">' + padLabel('🚨 VIDEO POLISI', 44) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="taut">' + padLabel('TAUT HP', 10) + '</tg-button><tg-button type="callback_data" style="danger" data="matikan">' + padLabel('MATIKAN HP', 10) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="timer">' + padLabel('TIMER PERANGKAT', 15) + '</tg-button><tg-button type="callback_data" style="success" data="jeda">' + padLabel('JEDA PERANGKAT', 15) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="polisi_off">' + padLabel('Matikan Video Polisi', 21) + '</tg-button><tg-button type="callback_data" style="link" data="laporan">' + padLabel('Laporan', 21) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="status">' + padLabel('Status HP', 21) + '</tg-button><tg-button type="callback_data" style="primary" data="device">' + padLabel('DEVICE', 21) + '</tg-button></tg-button-row>';
+    // Tata letak user (15:31): DEVICE+LAPORAN pasangan; TIMER sendiri;
+    // JEDA sendiri; TAUT HP+STATUS HP pasangan; VIDEO POLISI sendiri.
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="device">' + padLabel('DEVICE', 21) + '</tg-button><tg-button type="callback_data" style="link" data="laporan">' + padLabel('Laporan', 21) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="timer">' + padLabel('TIMER PERANGKAT', 44) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="jeda">' + padLabel('JEDA PERANGKAT', 44) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="taut">' + padLabel('TAUT HP', 21) + '</tg-button><tg-button type="callback_data" style="link" data="status">' + padLabel('Status HP', 21) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="polisi">' + padLabel('\🚨 VIDEO POLISI', 44) + '</tg-button></tg-button-row>';
 }
 function deviceRichHtml() {
   const ids = Object.keys(db.devices);
@@ -134,6 +134,7 @@ function deviceRichHtml() {
     + '</table>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="dev_add">' + padLabel('+ DEVICE', 12) + '</tg-button><tg-button type="callback_data" style="danger" data="dev_del">' + padLabel('- DEVICE', 12) + '</tg-button></tg-button-row>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="dev_list">' + padLabel('LIST DEVICE', 28) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="matikan">' + padLabel('MATIKAN HP', 28) + '</tg-button></tg-button-row>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
 }
 
@@ -141,13 +142,12 @@ function ftTarget(fitur) { const t = (db.featureTargets || {})[fitur]; return t 
 function ftTargetName(fitur) { const t = ftTarget(fitur); return t === '*' ? 'Semua HP' : ((db.devices[t] || {}).name || 'Semua HP'); }
 function polisiRichHtml() {
   return '<h3>VIDEO POLISI</h3>'
-    + '<blockquote>Video peringatan yang tampil full-screen di HP anak dan terkunci di sana sampai kamu buka lagi. Atur videonya, lalu mulai dari sini.</blockquote>'
+    + '<blockquote>Video peringatan yang tampil full-screen di HP anak dan terkunci di sana sampai kamu buka lagi. Pasang videonya, lalu mulai dari sini.</blockquote>'
     + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr>'
     + '<tr><td>Video</td><td>' + (db.scareVideo ? 'Siap \u2014 ' + esc(db.scareVideo.fileName || 'video') : 'Belum dipasang (video bawaan aplikasi tetap dipakai)') + '</td></tr>'
-    + '<tr><td>Device Tujuan</td><td>' + esc(ftTargetName('polisi')) + '</td></tr>'
     + '<tr><td>Status</td><td>' + (db.policy.scareActive ? 'Sedang tampil (semua HP)' : 'Tidak aktif') + '</td></tr></table>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="pset">' + padLabel('SET VIDEO', 13) + '</tg-button><tg-button type="callback_data" style="danger" data="phapus">' + padLabel('HAPUS VIDEO', 13) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="pstart">' + padLabel('START VIDEO', 13) + '</tg-button><tg-button type="callback_data" style="primary" data="ppilih">' + padLabel('PILIH DEVICE', 13) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="pset">' + padLabel('+ VIDEO', 13) + '</tg-button><tg-button type="callback_data" style="danger" data="phapus">' + padLabel('- VIDEO', 13) + '</tg-button></tg-button-row>'
+    + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="pstart">' + padLabel('START VIDEO', 28) + '</tg-button></tg-button-row>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
 }
 function fiturRichHtml(fitur) {
@@ -396,7 +396,7 @@ async function handleCommand(msg) {
       return send('Fitur tidak dikenal.');
     }
     case '/pset':
-      return send('\🎬 *SET VIDEO POLISI*\nVideo saat ini: ' + (db.scareVideo ? (db.scareVideo.fileName || 'video') + ' (diatur ' + new Date(db.scareVideo.setAt).toLocaleString('id-ID') + ')' : 'belum ada dari bot \u2014 video bawaan aplikasi yang dipakai') + '\n\nCara memasang / mengganti: *kirim saja video barunya ke chat ini.* Video itu otomatis tersimpan dan langsung dipakai.');
+      return send('\🎬 *+ VIDEO \u2014 PASANG VIDEO POLISI*\nVideo saat ini: ' + (db.scareVideo ? (db.scareVideo.fileName || 'video') + ' (diatur ' + new Date(db.scareVideo.setAt).toLocaleString('id-ID') + ')' : 'belum ada dari bot \u2014 video bawaan aplikasi yang dipakai') + '\n\nCara memasang / mengganti: *kirim saja video barunya ke chat ini.* Video itu otomatis tersimpan dan langsung dipakai.');
     case '/phapus': {
       if (!db.scareVideo) return send('\🎬 Belum ada video dari bot yang bisa dihapus. Yang tampil di HP anak saat ini adalah video bawaan aplikasi.');
       db.scareVideo = null; saveDb();
@@ -418,8 +418,19 @@ async function handleCommand(msg) {
       return sendRich(chatId, fiturRichHtml(f), 'Device tujuan diatur.');
     }
     case '/pstart': {
-      if (!Object.keys(db.devices).length) return send('Belum ada HP anak yang tertaut. Tambah dulu lewat tombol + DEVICE.');
-      const t = ftTarget('polisi'); const tname = ftTargetName('polisi');
+      if (!Object.keys(db.devices).length) return send('Belum ada HP anak yang tertaut. Tambah dulu lewat tombol DEVICE.');
+      const html = '<h3>START VIDEO \u2014 PILIH DEVICE</h3>'
+        + '<blockquote>Pilih HP yang layarnya mau ditampilkan video polisi, atau semua HP sekaligus.</blockquote>'
+        + '<table bordered striped><tr><th>PERANGKAT</th><th>KETERANGAN</th></tr>' + deviceRowsHtml() + '</table>'
+        + '<tg-button-row align="center"><tg-button type="callback_data" style="primary" data="pgo_all">' + padLabel('Semua HP', 28) + '</tg-button></tg-button-row>'
+        + Object.keys(db.devices).map(id => '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="pgo_' + id + '">' + padLabel(esc(db.devices[id].name), 28) + '</tg-button></tg-button-row>').join('')
+        + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="polisi">' + padLabel('Kembali', 28) + '</tg-button></tg-button-row>';
+      return sendRich(chatId, html, 'Pilih device untuk START VIDEO.');
+    }
+    case '/pgo': {
+      const t = arg === 'all' || !arg ? '*' : arg;
+      const tname = t === '*' ? 'Semua HP' : ((db.devices[t] || {}).name || t);
+      if (t !== '*' && !db.devices[t]) return send('HP tujuan tidak ditemukan.');
       if (t === '*') db.policy.scareActive = true;
       queueCommand('scare', null, t); saveDb();
       const txt = '\🚨 VIDEO POLISI DITAMPILKAN. Dalam \u00b110 detik layar HP anak berubah jadi video itu dan terkunci di sana, Tekan button dibawah untuk buka';
@@ -569,6 +580,7 @@ async function handleCallback(cb) {
   if (cb.data && cb.data.indexOf('ftarget_') === 0) { const r = cb.data.slice(8); const li = r.lastIndexOf('_'); fake.text = '/ftarget ' + r.slice(0, li) + ' ' + r.slice(li + 1); return handleCommand(fake); }
   if (cb.data && cb.data.indexOf('fstart_') === 0) { fake.text = '/fstart ' + cb.data.slice(7); return handleCommand(fake); }
   if (cb.data && cb.data.indexOf('pbuka_') === 0) { fake.text = '/pbuka ' + cb.data.slice(6); return handleCommand(fake); }
+  if (cb.data && cb.data.indexOf('pgo_') === 0) { fake.text = '/pgo ' + cb.data.slice(4); return handleCommand(fake); }
   if (cb.data && cb.data.indexOf('act_') === 0) { const li = cb.data.lastIndexOf('_'); fake.text = '/jalan ' + cb.data.slice(4, li) + ' ' + cb.data.slice(li + 1); return handleCommand(fake); }
   if (cb.data && cb.data.indexOf('del_') === 0) { fake.text = '/hapusdevice ' + cb.data.slice(4); return handleCommand(fake); }
   if (map[cb.data]) { fake.text = map[cb.data]; return handleCommand(fake); }
