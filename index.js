@@ -368,7 +368,7 @@ async function handleCommand(msg) {
       db.policy.pauseUntil = 0; saveDb();
       return send('▶ Jeda diakhiri. Perangkat anak bisa dipakai lagi.');
     case '/tambahdevice':
-      return send('➕ *+ DEVICE — Tambah HP Anak*\nKode Pairing: `' + CHILD_CODE + '`\nAlamat Server: `163.52.135.1:2470`\nLangkah:\n1. Pasang aplikasi Parental Kids di HP anak\n2. Buka aplikasi, isi alamat server + kode pairing + nama HP\n3. Tekan Simpan + Hubungkan\n4. Aktifkan semua izin yang diminta\n5. Tekan Mulai Pemantauan\n\nSatu kode ini bisa dipakai di banyak HP anak sekaligus.');
+      return send('➕ *+ DEVICE — Tambah HP Anak*\nKode Pairing: `' + CHILD_CODE + '`\nAlamat Server: `163.52.135.130:2470`\nLangkah:\n1. Pasang aplikasi Parental Kids di HP anak\n2. Buka aplikasi, isi alamat server + kode pairing + nama HP\n3. Tekan Simpan + Hubungkan\n4. Aktifkan semua izin yang diminta\n5. Tekan Mulai Pemantauan\n\nSatu kode ini bisa dipakai di banyak HP anak sekaligus.');
     case '/listdevice':
       return sendRich(chatId, listDeviceRichHtml(), 'Daftar HP anak yang tertaut.');
     case '/pilihhapus':
