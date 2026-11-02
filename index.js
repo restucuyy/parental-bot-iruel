@@ -138,7 +138,9 @@ function startRichHtml() {
     + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="timer">' + padLabel('TIMER PERANGKAT', 44) + '</tg-button></tg-button-row>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="jeda">' + padLabel('JEDA PERANGKAT', 44) + '</tg-button></tg-button-row>'
     + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="taut">' + padLabel('TAUT HP', 21) + '</tg-button><tg-button type="callback_data" style="success" data="status">' + padLabel('Status HP', 21) + '</tg-button></tg-button-row>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="polisi">' + padLabel('\🚨 VIDEO POLISI', 44) + '</tg-button></tg-button-row>';
+    + (polisiActive()
+      ? '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="pmatikan">' + padLabel('MATIKAN VIDEO', 44) + '</tg-button></tg-button-row>'
+      : '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="polisi">' + padLabel('\uD83D\uDEA8 VIDEO POLISI', 44) + '</tg-button></tg-button-row>');
 }
 function deviceRichHtml() {
   const ids = Object.keys(db.devices);
@@ -161,8 +163,10 @@ function polisiRichHtml() {
     + '<blockquote>Video peringatan yang tampil full-screen di HP anak dan terkunci di sana sampai kamu buka lagi. Videonya sudah paten \u2014 video kiriman kamu.</blockquote>'
     + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr>'
     + '<tr><td>Video</td><td>' + (db.scareVideo ? 'PATEN \u2014 ' + esc(db.scareVideo.fileName || 'video') + ' (video kiriman kamu, tidak bisa diganti / dihapus)' : 'PATEN \u2014 video bawaan aplikasi (video kiriman kamu, tertanam di aplikasi)') + '</td></tr>'
-    + '<tr><td>Status</td><td>' + (db.policy.scareActive ? 'Sedang tampil (semua HP)' : 'Tidak aktif') + '</td></tr></table>'
-    + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="pstart">' + padLabel('START VIDEO', 44) + '</tg-button></tg-button-row>'
+    + '<tr><td>Status</td><td>' + (polisiActive() ? 'SEDANG TAMPIL di HP anak (terkunci)' : 'Tidak aktif') + '</td></tr></table>'
+    + (polisiActive()
+      ? '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="pmatikan">' + padLabel('MATIKAN VIDEO', 44) + '</tg-button></tg-button-row>'
+      : '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="pstart">' + padLabel('START VIDEO', 44) + '</tg-button></tg-button-row>')
     + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="menu">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
 }
 function fiturRichHtml(fitur) {
@@ -447,6 +451,7 @@ function jadwalRichHtml() {
 // BUKA TOTAL (aturan user): sekali BUKA, semua yang aktif hilang bersamaan:
 // kunci manual, video polisi, jeda, dan timer sesi — global maupun per-device.
 function clearAllLocks() {
+  db.polisiOn = {};
   db.policy.locked = false; db.policy.scareActive = false; db.policy.pauseUntil = 0; db.policy.sessionUntil = 0;
   for (const id of Object.keys(db.perDevice || {})) { const d = db.perDevice[id]; if (d) { delete d.locked; delete d.scareActive; delete d.pauseUntil; delete d.sessionUntil; } }
   queueCommand('unscare', null, '*'); queueCommand('unlock', null, '*');
@@ -465,9 +470,13 @@ function polisiStart(target) {
   // VIDEO POLISI versi remot penuh: video tampil dulu, sesudah itu HP mati & terkunci
   // sampai orang tua menekan BUKA dari bot.
   setTargetLocked(target, true);
+  db.polisiOn = db.polisiOn || {};
+  if (target === 'all' || target === '*') { db.polisiOn['*'] = now(); for (const id of Object.keys(db.devices)) db.polisiOn[id] = now(); }
+  else db.polisiOn[target] = now();
   queueCommand('matikan', null, target === 'all' ? '*' : target);
   saveDb();
 }
+function polisiActive() { return !!(db.polisiOn && Object.keys(db.polisiOn).length); }
 
 async function handleCommand(msg) {
   const chatId = msg.chat.id; const fromId = msg.from && msg.from.id;
@@ -616,9 +625,28 @@ async function handleCommand(msg) {
       const txt = '\🚨 VIDEO POLISI DITAMPILKAN. Dalam \u00b110 detik layar HP anak berubah jadi video itu dan terkunci di sana, Tekan button dibawah untuk buka';
       const html = '<p><b>VIDEO POLISI</b></p><blockquote>' + txt + '</blockquote>'
         + '<table bordered striped><tr><th>INFO</th><th>KETERANGAN</th></tr><tr><td>Target</td><td>' + esc(tname) + '</td></tr></table>'
-        + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="pbuka_' + (t === '*' ? 'all' : t) + '">' + padLabel('BUKA', 44) + '</tg-button></tg-button-row>'
+        + '<tg-button-row align="center"><tg-button type="callback_data" style="success" data="pbuka_' + (t === '*' ? 'all' : t) + '">' + padLabel('MATIKAN VIDEO', 44) + '</tg-button></tg-button-row>'
         + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="polisi">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
       return sendRich(chatId, html, txt);
+    }
+    case '/pmatikan': {
+      if (!Object.keys(db.devices).length) return send('Belum ada HP anak yang tertaut.');
+      if (Object.keys(db.devices).length === 1) { const fM = { chat: { id: chatId }, from: msg.from, text: '/pmgo ' + Object.keys(db.devices)[0] }; return handleCommand(fM); }
+      const htmlM = '<p><b>MATIKAN VIDEO \u2014 PILIH DEVICE</b></p>'
+        + '<blockquote>Pilih HP yang video polisinya mau dimatikan. Sesudah dimatikan, video hilang dari HP anak dan tidak muncul lagi; HP terbuka.</blockquote>'
+        + '<table bordered striped><tr><th>PERANGKAT</th><th>KETERANGAN</th></tr>' + deviceRowsHtml() + '</table>'
+        + Object.keys(db.devices).map(id => '<tg-button-row align="center"><tg-button type="callback_data" style="danger" data="pmgo_' + id + '">' + padLabel(esc(db.devices[id].name), 44) + '</tg-button></tg-button-row>').join('')
+        + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="polisi">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
+      return sendRich(chatId, htmlM, 'Pilih device untuk MATIKAN VIDEO.');
+    }
+    case '/pmgo': {
+      // MATIKAN VIDEO = lawan START VIDEO: video mati di HP anak, tidak muncul lagi, HP terbuka (BUKA TOTAL).
+      clearAllLocks(); saveDb();
+      const tname2 = arg && db.devices[arg] ? db.devices[arg].name : 'HP anak';
+      const txt2 = '\u2705 VIDEO POLISI DIMATIKAN di ' + tname2 + '. Video hilang dari layar HP anak dan tidak akan muncul lagi. HP anak terbuka.';
+      const html2 = '<p><b>MATIKAN VIDEO</b></p><blockquote>' + txt2 + '</blockquote>'
+        + '<tg-button-row align="center"><tg-button type="callback_data" style="link" data="polisi">' + padLabel('Kembali', 44) + '</tg-button></tg-button-row>';
+      return sendRich(chatId, html2, txt2);
     }
     case '/pbuka': {
       const t = arg === 'all' || !arg ? '*' : arg;
@@ -725,8 +753,8 @@ async function handleCommand(msg) {
       return send('🚨 *VIDEO POLISI DITAMPILKAN.* Dalam ±10 detik layar HP anak berubah jadi video itu dan terkunci di sana, sampai kamu tekan tombol *Matikan Video Polisi* (atau /buka).');
     }
     case '/polisimati':
-      db.policy.scareActive = false; queueCommand('unscare'); saveDb();
-      return send('✅ Video polisi dimatikan. HP anak kembali normal.');
+      clearAllLocks(); saveDb();
+      return send('\u2705 Video polisi dimatikan. HP anak terbuka dan video tidak muncul lagi.');
     case '/blokir': {
       if (!arg) return send('Format: `/blokir com.contoh.aplikasi`\nNama paket bisa dilihat di /laporan versi lengkap atau tanya saya nama paket aplikasi tertentu.');
       if (!db.policy.blockedApps.includes(arg)) db.policy.blockedApps.push(arg);
@@ -802,6 +830,8 @@ async function handleCallback(cb) {
   if (cb.data && cb.data.indexOf('fstart_') === 0) { fake.text = '/fstart ' + cb.data.slice(7); return handleCommand(fake); }
   if (cb.data && cb.data.indexOf('pbuka_') === 0) { fake.text = '/pbuka ' + cb.data.slice(6); return handleCommand(fake); }
   if (cb.data && cb.data.indexOf('pgo_') === 0) { fake.text = '/pgo ' + cb.data.slice(4); return handleCommand(fake); }
+  if (cb.data === 'pmatikan') { fake.text = '/pmatikan'; return handleCommand(fake); }
+  if (cb.data && cb.data.indexOf('pmgo_') === 0) { fake.text = '/pmgo ' + cb.data.slice(5); return handleCommand(fake); }
   if (cb.data === 'presetkecil') { fake.text = '/presetanakkecil'; return handleCommand(fake); }
   if (cb.data === 'sch_belajar') { fake.text = '/jadwal 19:00-21:00 belajar'; return handleCommand(fake); }
   if (cb.data === 'sch_tidur') { fake.text = '/jadwal 20:00-05:30 tidur malam'; return handleCommand(fake); }
